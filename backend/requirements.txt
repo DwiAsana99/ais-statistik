@@ -10,6 +10,7 @@ geoalchemy2==0.17.1
 orjson==3.10.12
 python-dotenv==1.0.1
 httptools==0.6.4
+httpx==0.28.1
 reportlab==4.2.5
 openpyxl==3.1.5
 numpy==2.2.1

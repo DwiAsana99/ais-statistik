@@ -86,10 +86,33 @@ Catatan kerja harian proyek UVMS Modul Statistik AIS. Detail status per-fase ada
 - **Verifikasi**: `grep -r "@mui\|THEME_COLORS" frontend/src` → nol hasil. `npm uninstall @mui/material @mui/icons-material @emotion/react @emotion/styled` (68 package kehapus). `docker compose up -d --build frontend` → `tsc -b && vite build` sukses tanpa error, bundle JS utama turun ~310KB→~248KB tanpa MUI+Emotion. 15 route sidebar di-curl semua balas 200. 5 hex brand dikonfirmasi ada di CSS hasil build (`grep -o "003b5c\|0c7b93\|94d2bd\|ee9b00\|f6f8ff"`).
 - **Belum diverifikasi**: tidak ada tool screenshot/browser di environment ini — belum dicek visual langsung di browser sungguhan (cuma otomatis: build, route 200, CSS var). User disarankan buka sendiri buat cek polish visual & interaksi (sort tabel, playback slider, modal, dark/light toggle).
 
+### 11. Integrasi login UVMS — guard backend (Fase 1 dari README-INTEGRASI-AIS-STATISTIK.md)
+- User upload spesifikasi integrasi login dari tim UVMS pusat, disimpan ke [README-INTEGRASI-AIS-STATISTIK.md](README-INTEGRASI-AIS-STATISTIK.md). Kontrak: backend statistik harus memverifikasi cookie sesi `uvms_session` + hak akses modul `statistik` ke `GET /api/v1/auth/authorize/statistik` di backend UVMS, pada **setiap** request API (bukan cache), fail-closed kalau UVMS tak terjangkau.
+- **Diklarifikasi dgn user dulu** (UVMS belum jalan, scope dokumen ada 3 bagian): dikerjakan **guard backend + frontend saja** sekarang; bagian base-path `/statistik/` + penyelarasan port dev (8082/8081) ke proxy portal **ditunda** — itu akan ubah cara akses app yang lagi jalan (root path, :3000 Docker/:5173 dev) dan baru relevan pas deploy beneran di belakang proxy UVMS.
+- Backend: [app/auth.py](backend/app/auth.py) — dependency `require_statistik`, dipasang di level `APIRouter(dependencies=[...])` di [router.py](backend/app/api/router.py) supaya otomatis meng-cover semua router yang di-include SEKARANG maupun yang ditambah NANTI. `/api/health` sengaja tidak lewat sini (didefinisikan langsung di `main.py`, tetap publik utk health check).
+- Setting baru `uvms_internal_url`/`uvms_module_code`/`uvms_auth_timeout_s` di `config.py`, `UVMS_INTERNAL_URL=` (kosong) ditambah ke `backend/.env` (gitignored) — belum diisi karena UVMS belum ada untuk dites.
+- **Hardening** (scope yang diminta user: fokus ke integrasi ini, bukan hardening umum aplikasi):
+  - Fail-closed 3 jalur: `UVMS_INTERNAL_URL` kosong → 503 tanpa nyoba connect; `httpx.RequestError` (UVMS unreachable/timeout) → 503; status UVMS selain 200/401/403 atau bentuk respons tak sesuai kontrak → 503. Tidak ada jalur yang diam-diam meloloskan akses.
+  - Cookie/token sesi **tidak pernah di-log** (diaudit manual — hanya event level dicatat, bukan nilainya).
+  - Response UVMS divalidasi lewat model `UvmsUser` (pydantic), bukan dict mentah dipercaya langsung.
+  - **Di luar scope** (dicatat, bukan lupa): row-filtering per `company_id` yang disebut dokumen — skema data modul ini (`ais_position`, `ais_vessel_static`, dst.) adalah data surveillance nasional, tidak ada kolom `company_id` sama sekali, jadi tidak ada baris yang perlu difilter per perusahaan di sini.
+- Frontend: `api/client.ts` — `withCredentials: true` (siap dipakai begitu subpath jalan; cookie UVMS baru bisa kebaca browser setelah frontend & backend satu host, jadi belum efektif di dev sekarang) + axios response interceptor: 401 log + redirect ke `VITE_UVMS_LOGIN_URL` **kalau** env var itu diisi (dibiarkan kosong sekarang — UVMS belum punya URL nyata, redirect ke url kosong cuma bakal nge-strand user), 403/503 log saja (halaman pemanggil sudah punya state error sendiri).
+- **Tervalidasi live** (backend direbuild & 4 jalur dites via curl, termasuk recreate container penuh krn `docker compose restart` ternyata TIDAK reload `env_file` — cuma `up -d --force-recreate` yang reload):
+  - `/api/health` tanpa cookie → 200 (tetap publik)
+  - endpoint data tanpa cookie → 401 `login required`, tanpa sempat manggil UVMS
+  - cookie ada tapi `UVMS_INTERNAL_URL` kosong → 503 `authorization unavailable`
+  - cookie ada, `UVMS_INTERNAL_URL` diisi ke alamat yang gak ada yang listen → 503 `UVMS unavailable` (log beda: "UVMS tidak terjangkau", confirm exception branch yang bener yang jalan, bukan cuma "belum dikonfigurasi")
+  - `.env` dibalikin kosong lagi setelah tes, container di-recreate ke kondisi bersih.
+- **Dev bypass ditambahkan** (dikonfirmasi ke user dulu — guard sempat total memblokir akses lokal): env var `DISABLE_UVMS_GUARD=true` (default `false`) di `app/auth.py` — kalau aktif, `require_statistik` diloloskan tanpa cek cookie/UVMS sama sekali, TAPI dicatat sbg `logger.warning(...)` di **setiap request** (bukan cuma sekali saat startup) supaya gak mungkin luput kalau tanpa sengaja aktif di tempat yang seharusnya production. Diaktifkan di `backend/.env` lokal sesi ini (`DISABLE_UVMS_GUARD=true`, UVMS masih belum jalan) — **wajib dihapus/di-`false`-kan sebelum deploy production**. Tervalidasi live: `GET /api/dashboard/overview` tanpa cookie → 200 + baris WARNING di log backend.
+- Jalur sukses (UVMS balas 200 asli) **belum bisa diuji end-to-end** — UVMS belum jalan di lingkungan manapun yang bisa diakses sesi ini.
+
 ### Belum selesai / item terbuka
 - Klasifikasi 3-jenis jump A1 (`isolated_outlier`/`single_axis`/`persistent_shift`) — prasyarat A2 & A8 supaya tidak tercampur noise.
 - A4 TA (turning/U-turn, jendela geser), A5 (sudah ada versi loitering trajektori tersendiri, beda dari definisi TRANSSHIPMENT_ALGORITHM.md), A6–A8, B1–B3 — belum diimplementasi, lihat matriks kelayakan di tab pertama `/anomaly`.
 - Keputusan `drop_logic` loitering (`and` vs `or`, ANOMALY_ALGORITHM.md/loitering.md Bagian 9) — belum diputuskan user.
 - TRANSSHIPMENT_ALGORITHM.md — dokumen baru, belum ada baris implementasi (checklist Bagian 14 semua kosong).
 - Migrasi UI DaisyUI — belum dicek visual di browser sungguhan (lihat poin di atas).
-- Repo git belum di-commit/push (termasuk seluruh migrasi UI ini).
+- Integrasi UVMS Fase 2 (base path `/statistik/`, `basename` router, penyelarasan port 8082/8081, reverse proxy) — ditunda, lihat README-INTEGRASI-AIS-STATISTIK.md bagian 3.
+- Integrasi UVMS: jalur sukses (200 dari UVMS asli) belum bisa diuji — UVMS belum jalan. Uji penerimaan 6 skenario di README-INTEGRASI-AIS-STATISTIK.md belum bisa dijalankan penuh.
+- **PENTING sebelum deploy production**: `backend/.env` lokal punya `DISABLE_UVMS_GUARD=true` — pastikan env production TIDAK punya baris ini (atau eksplisit `false`), kalau tidak guard UVMS mati total.
+- Repo git belum di-commit/push (termasuk seluruh migrasi UI + guard UVMS ini).

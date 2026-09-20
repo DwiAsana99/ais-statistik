@@ -1,7 +1,11 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from app.api import dashboard, vessels, statistics, traffic, maps, encounters, reports, search, messages, stations, quality, behavior, anomaly
+from app.auth import require_statistik
 
-api_router = APIRouter()
+# Semua data API di balik guard UVMS — README-INTEGRASI-AIS-STATISTIK.md.
+# /api/health SENGAJA tidak lewat sini (didefinisikan langsung di main.py,
+# publik, dipakai health check container/orchestrator).
+api_router = APIRouter(dependencies=[Depends(require_statistik)])
 api_router.include_router(dashboard.router)
 api_router.include_router(vessels.router)
 api_router.include_router(statistics.router)

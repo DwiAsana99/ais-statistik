@@ -15,6 +15,17 @@ class Settings(BaseSettings):
     app_title: str = "UVMS Modul Statistik AIS"
     app_version: str = "0.1.0"
 
+    # Integrasi login UVMS (README-INTEGRASI-AIS-STATISTIK.md) — [PARAM] UVMS
+    # belum jalan saat ini ditulis; uvms_internal_url WAJIB diisi via .env
+    # sebelum guard ini bisa dites end-to-end. Fail-closed (503) selama itu.
+    uvms_internal_url: str = ""
+    uvms_module_code: str = "statistik"
+    uvms_auth_timeout_s: float = 5.0
+    # Dev-only bypass — lihat app/auth.py. HARUS false/absen di production;
+    # tiap request yang lewat bypass ini dicatat sbg WARNING di log, sengaja
+    # berisik supaya tidak diam-diam kebawa ke deploy.
+    disable_uvms_guard: bool = False
+
     # Loitering detection (Fase 12) — algoritma P1, lihat loitering.md.
     # Ambang batas di sini, BUKAN di-hardcode di service, biar konsisten dg prinsip "jangan hardcode".
     loitering_ports_file: str = "../data/ports.csv"
