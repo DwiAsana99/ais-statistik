@@ -1,0 +1,53 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "id": "ALKI-I", "name": "ALKI I – Selat Malaka → Selat Karimata → Selat Sunda" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [103.5, 6.0],
+          [104.5, 4.0],
+          [104.5, 1.5],
+          [104.8, -0.5],
+          [105.2, -3.0],
+          [105.5, -5.5],
+          [105.9, -6.8]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "ALKI-II", "name": "ALKI II – Selat Lombok → Selat Makassar" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [116.5, 7.0],
+          [117.0, 4.0],
+          [117.0, 1.5],
+          [116.5, -0.5],
+          [116.2, -3.0],
+          [115.7, -5.5],
+          [115.7, -9.0]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "ALKI-III", "name": "ALKI III – Selat Ombai / Selat Wetar → Laut Maluku" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [127.5, 4.5],
+          [127.5, 1.0],
+          [126.5, -1.0],
+          [125.5, -3.5],
+          [124.5, -5.5],
+          [124.5, -8.5],
+          [125.0, -9.5]
+        ]
+      }
+    }
+  ]
+}

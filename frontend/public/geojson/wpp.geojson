@@ -1,0 +1,86 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "id": "WPP-711", "name": "WPP 711 – Selat Karimata, Laut Natuna, Laut China Selatan" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [104.0, 7.0], [119.0, 7.0], [119.0, 1.0], [110.0, -1.0],
+          [106.0, -1.0], [104.0, 1.0], [104.0, 7.0]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "WPP-712", "name": "WPP 712 – Laut Jawa" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [105.0, -1.0], [116.0, -1.0], [116.0, -7.5], [105.0, -7.5], [105.0, -1.0]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "WPP-713", "name": "WPP 713 – Selat Makassar, Teluk Bone, Laut Flores, Laut Bali" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [113.5, 1.5], [122.0, 1.5], [122.0, -9.0], [113.5, -9.0], [113.5, 1.5]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "WPP-714", "name": "WPP 714 – Teluk Tolo, Laut Banda" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [120.0, 1.0], [132.0, 1.0], [132.0, -8.0], [120.0, -8.0], [120.0, 1.0]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "WPP-715", "name": "WPP 715 – Teluk Tomini, Laut Maluku, Laut Halmahera" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [120.0, 5.0], [133.0, 5.0], [133.0, -1.0], [120.0, -1.0], [120.0, 5.0]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "WPP-716", "name": "WPP 716 – Laut Sulawesi" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [116.0, 7.5], [127.0, 7.5], [127.0, 1.5], [116.0, 1.5], [116.0, 7.5]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "WPP-717", "name": "WPP 717 – Teluk Cenderawasih, Samudera Pasifik" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [130.0, 5.0], [141.0, 5.0], [141.0, -4.0], [130.0, -4.0], [130.0, 5.0]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "WPP-718", "name": "WPP 718 – Laut Aru, Laut Arafura, Laut Timor" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [124.0, -4.0], [141.0, -4.0], [141.0, -11.0], [124.0, -11.0], [124.0, -4.0]
+        ]]
+      }
+    }
+  ]
+}
