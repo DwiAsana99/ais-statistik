@@ -25,6 +25,9 @@ import {
   CalendarMonth,
   Settings,
   Rule,
+  Anchor,
+  Speed,
+  Route,
 } from "@mui/icons-material";
 import { SIDEBAR_WIDTH, SIDEBAR_COLLAPSED_WIDTH, NAV_GROUPS, THEME_COLORS } from "../../utils/constants";
 
@@ -42,6 +45,9 @@ const ICONS: Record<string, React.ReactElement> = {
   CalendarMonth: <CalendarMonth />,
   Settings: <Settings />,
   Rule: <Rule />,
+  Anchor: <Anchor />,
+  Speed: <Speed />,
+  Route: <Route />,
 };
 
 interface SidebarProps {
@@ -147,9 +153,7 @@ export default function Sidebar({ open, onToggle, mobile = false, onClose }: Sid
               </Typography>
             )}
             {group.items.map((item) => {
-              const isActive = !item.disabled && (
-                item.path === "/" ? location.pathname === "/" : location.pathname.startsWith(item.path)
-              );
+              const isActive = !item.disabled && location.pathname === item.path;
               return (
                 <ListItemButton
                   key={item.path}

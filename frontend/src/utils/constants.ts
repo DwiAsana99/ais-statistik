@@ -27,11 +27,13 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    groupLabel: "ANALISIS",
+    groupLabel: "ANALISIS & DETEKSI ANOMALI",
     items: [
       { label: "Peta", path: "/map", icon: "Map" },
+      { label: "Track Kapal", path: "/map/track", icon: "Route" },
       { label: "Pertemuan Kapal", path: "/encounters", icon: "Sync" },
-      { label: "Analisis Perilaku", path: "/behavior", icon: "Psychology" },
+      { label: "Loitering", path: "/loitering", icon: "Anchor" },
+      { label: "Anomali Kinematik", path: "/anomaly/kinematic", icon: "Speed" },
       { label: "Deteksi Anomali", path: "/anomaly", icon: "Rule" },
     ],
   },

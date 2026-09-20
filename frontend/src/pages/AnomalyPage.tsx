@@ -66,7 +66,7 @@ const LAYER_A: ModuleRow[] = [
   { id: "A1", desc: "Lompatan posisi & SOG mismatch. Live — hasil nyata di tab sebelah, tersimpan di tabel anomaly_events. Klasifikasi 3-jenis jump belum dikerjakan.", status: "warn" },
   { id: "A2", desc: "Duplikasi identitas (1 MMSI, ≥2 trek fisik tak mungkin). Live — hasil di tab sebelah, tersimpan di anomaly_events.", status: "good" },
   { id: "A3", desc: "AIS gap (\"dark activity\"). Live dengan adaptasi — kriteria jarak-ke-receiver DIHILANGKAN (2 stasiun kita tak punya koordinat), diganti proxy data-driven: kapal lain yang tetap terlihat di sel yang sama.", status: "warn" },
-  { id: "A4", desc: "Anomali kinematik (SCA/TA). heading_deg ada (≈63% terisi, sisanya sentinel 511°), rot_deg_per_min ada (sentinel −128 perlu dikecualikan).", status: "good" },
+  { id: "A4", desc: "Anomali kinematik (SCA). Live — 3 sub-jenis (speed_change, course_change, heading_cog_mismatch), ambang tetap [ADAPT], halaman khusus \"Anomali Kinematik\" di sidebar. TA (U-turn/berputar, jendela geser) belum dikerjakan.", status: "warn" },
   { id: "A5", desc: "Loitering. Sudah live di produksi (Fase 12) — algoritma trajektori 4 jam + rule P1, tervalidasi 40 event/7 hari.", status: "good" },
   { id: "A6", desc: "Encounter/rendezvous. Sudah ada sejak Fase 6, tapi pakai ambang sendiri (500 m / 30 mnt) — belum persis definisi GFW (500 m / 2 jam / median SOG<2kn / ≥10 km dari pelabuhan).", status: "warn" },
   { id: "A7", desc: "Konsistensi status/tipe vs perilaku. nav_status_code & ship_type_code tersedia penuh.", status: "good" },

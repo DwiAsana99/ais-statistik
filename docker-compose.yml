@@ -9,6 +9,7 @@ services:
       - ./backend/.env
     volumes:
       - ./backend:/app
+      - ./data:/data
     restart: unless-stopped
 
   frontend:

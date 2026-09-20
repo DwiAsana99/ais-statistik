@@ -7,7 +7,7 @@ import {
 import { Grid } from "@mui/material";
 import {
   CalendarMonth, TrendingUp, TrendingDown, Remove, Close,
-  DirectionsBoat, Message, CheckCircle, ErrorOutline,
+  DirectionsBoat, Message, CheckCircle, ErrorOutlined,
 } from "@mui/icons-material";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip as ReTooltip,
@@ -399,7 +399,7 @@ export default function MonthlyReportPage() {
                 subtitle={
                   previous ? `Bln lalu: ${previous.avg_error_rate.toFixed(2)}%` : undefined
                 }
-                icon={errorStatus === "healthy" ? <CheckCircle /> : <ErrorOutline />}
+                icon={errorStatus === "healthy" ? <CheckCircle /> : <ErrorOutlined />}
                 color={errorColor}
               />
             </Grid>
@@ -444,7 +444,7 @@ export default function MonthlyReportPage() {
                       color: THEME_COLORS.text,
                       fontSize: 12,
                     }}
-                    formatter={(value: number) => [formatNumber(value), "Pesan"]}
+                    formatter={(value) => [formatNumber(Number(value)), "Pesan"]}
                   />
                   <Bar dataKey="pesan" fill="#4e79a7" radius={[3, 3, 0, 0]} />
                 </BarChart>

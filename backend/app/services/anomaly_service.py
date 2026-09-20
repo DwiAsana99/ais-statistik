@@ -1,20 +1,26 @@
 """Deteksi anomali AIS — A0 (kualitas/identitas), A1 (lompatan & SOG mismatch),
-A2 (duplikasi identitas MMSI), A3 (AIS gap / dark activity).
+A2 (duplikasi identitas MMSI), A3 (AIS gap / dark activity), A4 (anomali kinematik).
 Lihat D:\\Project\\ais-statistik\\ANOMALY_ALGORITHM.md.
 
-A1/A2/A3 menghasilkan kejadian diskret -> disimpan permanen ke anomaly_events
+A1/A2/A3/A4 menghasilkan kejadian diskret -> disimpan permanen ke anomaly_events
 (upsert via natural key mmsi+type+detector+t_start).
 
 A0 (sentinel SOG/COG, lat/lon per titik) BUKAN kejadian diskret — volumenya besar
 (puluhan ribu/hari) dan sifatnya agregat kualitas data, bukan "insiden" satu-satu.
 Karena itu A0 dihitung on-demand sebagai ringkasan, tidak disimpan ke anomaly_events.
 
-Performa: A1+A2+A3 digabung dalam SATU pass per-MMSI (satu fetch posisi per kapal),
-bukan tiga fetch terpisah — lihat catatan performa Fase 12b (setiap fetch = 1 round
-trip jaringan ke DB remote; menriplikasi itu akan mentriplikasi durasi worker).
-A3 butuh info lintas-kapal (kapal lain di sel yang sama) yang dibangun dari data
-yang SAMA yang sudah di-fetch untuk A1/A2 (disimpan sementara di memori), bukan
+Performa: A1+A2+A3+A4 digabung dalam SATU pass per-MMSI (satu fetch posisi per kapal),
+bukan empat fetch terpisah — lihat catatan performa Fase 12b (setiap fetch = 1 round
+trip jaringan ke DB remote; mengempatkalilipatkan itu akan mengempatkalilipatkan durasi
+worker). A3 butuh info lintas-kapal (kapal lain di sel yang sama) yang dibangun dari data
+yang SAMA yang sudah di-fetch untuk A1/A2/A4 (disimpan sementara di memori), bukan
 query terpisah.
+
+A4 (SCA — Speed & Course Anomaly, ANOMALY_ALGORITHM.md Bagian 5 A4) diimplementasi
+dengan ambang tetap (threshold_mode=fixed di dokumen, bukan quantile/mad per konteks
+tipe-kapal x wilayah yang disarankan dokumen sbg mode lanjutan) — 3 sub-jenis:
+speed_change, course_change, heading_cog_mismatch. TA (turning/U-turn, jendela geser)
+BELUM diimplementasi — butuh agregasi per-jendela terpisah dari loop pairwise ini.
 """
 import json
 import math
@@ -26,6 +32,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 DETECTOR_A1 = "A1.v1"
 DETECTOR_A2 = "A2.v1"
 DETECTOR_A3 = "A3.v1"
+DETECTOR_A4 = "A4.v1"
 PLACEHOLDER_SUFFIXES = ("000000", "999999")
 
 KM_PER_NM = 1.852
@@ -62,6 +69,22 @@ RECEPTION_MIN_UNIQUE = 3
 # area tetap tercakup).
 INTENTIONAL_MIN_GAP_H = 2.0
 
+# A4 — kinematic.* (ANOMALY_ALGORITHM.md Bagian 9 config.yaml). Semua [ADAPT],
+# threshold_mode=fixed (bukan quantile/mad per konteks — lihat docstring modul).
+KINEMATIC_DT_MAX_S = 300.0
+# [ADAPT-2026-09-20] Ditambahkan setelah uji coba live: dokumen sumber hanya kasih
+# batas ATAS Δt, tanpa batas bawah. Pada dt_s=1 (umum di data kita, interval lapor
+# median ~10s tapi ada yg 1s), jitter SOG 0,1kn diekstrapolasi jadi 6kn/menit --
+# 2281 dari 2616 kandidat speed_change awal semuanya di dt_s=1, pola seragam khas
+# artefak pembulatan/pelaporan, bukan akselerasi nyata. Lantai 10s (median interval
+# lapor lokal, lihat GAP_NAIVE_MIN_S) menyaring ini tanpa membuang akselerasi wajar.
+KINEMATIC_MIN_DT_S = 10.0
+A_MAX_KN_PER_MIN = 5.0
+DCOG_MAX_DEG = 90.0
+SOG_TURN_MIN_KN = 3.0
+HDG_COG_MAX_DEG = 45.0
+HEADING_NA = 511  # ITU-R M.1371 sentinel "tidak tersedia"
+
 
 def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     lat1, lon1, lat2, lon2 = map(math.radians, (lat1, lon1, lat2, lon2))
@@ -69,6 +92,11 @@ def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     dlon = lon2 - lon1
     a = math.sin(dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
     return EARTH_R_KM * 2 * math.asin(math.sqrt(min(1, a)))
+
+
+def _circ_diff_deg(a: float, b: float) -> float:
+    """Selisih sudut sirkular (0-180 derajat), lihat ANOMALY_ALGORITHM.md Bagian 4."""
+    return abs(((a - b + 180) % 360) - 180)
 
 
 async def get_a0_summary(db: AsyncSession, lookback_days: int = 7) -> dict:
@@ -126,8 +154,8 @@ def _detect_a1_for_vessel(mmsi: int, rows: list[tuple]) -> list[dict]:
     events = []
     prev = rows[0]
     for row in rows[1:]:
-        t, lat, lon, sog = row
-        pt, plat, plon, _psog = prev
+        t, lat, lon, sog, *_ = row
+        pt, plat, plon, _psog, *_ = prev
         dt_s = (t - pt).total_seconds()
         if dt_s >= 1 and sog is not None:
             d_km = _haversine_km(plat, plon, lat, lon)
@@ -163,13 +191,82 @@ def _detect_a1_for_vessel(mmsi: int, rows: list[tuple]) -> list[dict]:
     return events
 
 
+def _detect_a4_for_vessel(mmsi: int, rows: list[tuple]) -> list[dict]:
+    """A4 SCA (Speed & Course Anomaly), ANOMALY_ALGORITHM.md Bagian 5 A4.
+    3 sub-jenis, tiap titik dievaluasi independen (bukan agregat jendela seperti TA):
+    - speed_change: |ΔSOG|/Δt melebihi ambang, pada Δt pendek (kemungkinan akselerasi/deselerasi tak wajar).
+    - course_change: |ΔCOG| sirkular besar dalam Δt pendek saat kapal masih bergerak (bukan diam/berlabuh).
+    - heading_cog_mismatch: heading kompas vs COG (arah gerak) menyimpang jauh saat kapal bergerak —
+      indikasi arus/angin kuat, atau data heading/COG tidak konsisten.
+    """
+    events: list[dict] = []
+    prev = rows[0]
+    for row in rows[1:]:
+        t, lat, lon, sog, cog, heading = row
+        pt, _plat, _plon, psog, pcog, _pheading = prev
+        dt_s = (t - pt).total_seconds()
+
+        if KINEMATIC_MIN_DT_S <= dt_s <= KINEMATIC_DT_MAX_S:
+            if sog is not None and psog is not None and sog < SOG_NA and psog < SOG_NA:
+                a_kn_per_min = abs(sog - psog) / (dt_s / 60)
+                if a_kn_per_min > A_MAX_KN_PER_MIN:
+                    events.append({
+                        "mmsi": mmsi, "type": "KINEMATIC_SCA", "detector": DETECTOR_A4,
+                        "t_start": t, "t_end": None, "lat": lat, "lon": lon,
+                        "score": a_kn_per_min, "severity": "unusual",
+                        "evidence": {
+                            "subtype": "speed_change",
+                            "sog_kn": round(sog, 1), "prev_sog_kn": round(psog, 1),
+                            "accel_kn_per_min": round(a_kn_per_min, 2), "dt_s": round(dt_s, 1),
+                        },
+                    })
+
+            if (
+                cog is not None and pcog is not None and cog < COG_NA and pcog < COG_NA
+                and sog is not None and sog > SOG_TURN_MIN_KN
+            ):
+                dcog = _circ_diff_deg(cog, pcog)
+                if dcog > DCOG_MAX_DEG:
+                    events.append({
+                        "mmsi": mmsi, "type": "KINEMATIC_SCA", "detector": DETECTOR_A4,
+                        "t_start": t, "t_end": None, "lat": lat, "lon": lon,
+                        "score": dcog, "severity": "unusual",
+                        "evidence": {
+                            "subtype": "course_change",
+                            "cog_deg": round(cog, 1), "prev_cog_deg": round(pcog, 1),
+                            "dcog_deg": round(dcog, 1), "sog_kn": round(sog, 1), "dt_s": round(dt_s, 1),
+                        },
+                    })
+
+        if (
+            heading is not None and heading != HEADING_NA
+            and cog is not None and cog < COG_NA
+            and sog is not None and sog > SOG_TURN_MIN_KN
+        ):
+            dh = _circ_diff_deg(float(heading), cog)
+            if dh > HDG_COG_MAX_DEG:
+                events.append({
+                    "mmsi": mmsi, "type": "KINEMATIC_SCA", "detector": DETECTOR_A4,
+                    "t_start": t, "t_end": None, "lat": lat, "lon": lon,
+                    "score": dh, "severity": "unusual",
+                    "evidence": {
+                        "subtype": "heading_cog_mismatch",
+                        "heading_deg": heading, "cog_deg": round(cog, 1),
+                        "diff_deg": round(dh, 1), "sog_kn": round(sog, 1),
+                    },
+                })
+
+        prev = row
+    return events
+
+
 def _detect_a2_for_vessel(mmsi: int, rows: list[tuple]) -> list[dict]:
     """GFW-style: kelompokkan pesan MMSI ini jadi >=1 'trek' fisik. Tiap pesan masuk
     ke trek yang bisa dijangkau (v_imp <= V_MAX_KN) dengan dt terkecil; kalau tidak
     ada yang bisa dijangkau, itu trek baru. >=2 trek besar & waktunya tumpang-tindih
     => satu MMSI dipakai >=2 entitas fisik berbeda secara bersamaan."""
     tracks: list[dict] = []
-    for t, lat, lon, _sog in rows:
+    for t, lat, lon, _sog, *_ in rows:
         candidates = []
         for tr in tracks:
             dt_s = (t - tr["last_t"]).total_seconds()
@@ -227,7 +324,7 @@ def _build_reception_map(vessel_rows: dict[int, list[tuple]]) -> dict:
     sama pada jam yang sama, langsung dari ais_position kita sendiri."""
     m: dict = {}
     for mmsi, rows in vessel_rows.items():
-        for t, lat, lon, _sog in rows:
+        for t, lat, lon, _sog, *_ in rows:
             key = _cell_key(lat, lon, t)
             m.setdefault(key, set()).add(mmsi)
     return m
@@ -241,8 +338,8 @@ def _detect_a3_for_vessel(mmsi: int, rows: list[tuple], reception_map: dict) -> 
     receiver padam) DAN kepadatan lalu lintas di sel itu cukup (reception_min_unique)."""
     events = []
     for i in range(1, len(rows)):
-        t0, lat0, lon0, _sog0 = rows[i - 1]
-        t1, lat1, lon1, _sog1 = rows[i]
+        t0, lat0, lon0, _sog0, *_ = rows[i - 1]
+        t1, lat1, lon1, _sog1, *_ = rows[i]
         gap_s = (t1 - t0).total_seconds()
         if gap_s <= GAP_NAIVE_MIN_S:
             continue
@@ -280,7 +377,7 @@ def _detect_a3_for_vessel(mmsi: int, rows: list[tuple], reception_map: dict) -> 
 
 
 async def detect_all(db: AsyncSession, lookback_days: int = 7) -> list[dict]:
-    """Orkestrasi A1+A2+A3 dalam satu pass per-MMSI. Lihat docstring modul."""
+    """Orkestrasi A1+A2+A3+A4 dalam satu pass per-MMSI. Lihat docstring modul."""
     since = datetime.now(timezone.utc) - timedelta(days=lookback_days)
 
     mmsi_rows = (await db.execute(text("SELECT mmsi FROM ais_vessel_static"))).all()
@@ -296,7 +393,8 @@ async def detect_all(db: AsyncSession, lookback_days: int = 7) -> list[dict]:
         rows = (
             await db.execute(
                 text("""
-                    SELECT position_time, lat::float, lon::float, sog_knots::float
+                    SELECT position_time, lat::float, lon::float, sog_knots::float,
+                           cog_deg::float, heading_deg
                     FROM ais_position
                     WHERE mmsi = :mmsi AND position_time >= :since
                       AND lat BETWEEN -90 AND 90 AND lon BETWEEN -180 AND 180
@@ -311,6 +409,7 @@ async def detect_all(db: AsyncSession, lookback_days: int = 7) -> list[dict]:
         vessel_data[mmsi] = rows
         events += _detect_a1_for_vessel(mmsi, rows)
         events += _detect_a2_for_vessel(mmsi, rows)
+        events += _detect_a4_for_vessel(mmsi, rows)
 
     # A3 butuh peta kehadiran lintas-kapal -> baru bisa dibangun setelah semua
     # kapal ter-fetch. Tidak ada query DB tambahan (pakai vessel_data yang sudah di memori).

@@ -37,8 +37,44 @@ Catatan kerja harian proyek UVMS Modul Statistik AIS. Detail status per-fase ada
 - Backend: `app/services/anomaly_service.py`, `app/api/anomaly.py` (`/api/anomaly/a0-summary`, `/summary`, `/events`), worker task `_refresh_anomaly` (SLOW_TASK, ~24 menit).
 - Frontend: halaman baru `AnomalyPage.tsx`, route `/anomaly`, nav "Deteksi Anomali" — **5 tab** (Kelayakan Modul, A0, A1, A2, A3), semua tab data baca live dari API, styling & palet 100% reuse komponen yang sudah ada (`THEME_COLORS`, `KpiCard`, `BarChartCard`).
 
+### 6. Setup Docker (permintaan devops)
+- `docker-compose.yml` sudah ada sebelumnya tapi `backend/Dockerfile` dan `frontend/Dockerfile` belum pernah dibuat (sempat ke-gitignore duluan tanpa filenya) — dibuat sekarang.
+- [backend/Dockerfile](backend/Dockerfile): `python:3.12-slim`, install `gcc`/`libpq-dev` untuk build dependency, jalan `uvicorn --reload` (kode di-mount live lewat volume).
+- [frontend/Dockerfile](frontend/Dockerfile): multi-stage — build Vite di `node:22-alpine`, hasil `dist/` disajikan `nginx:alpine` pakai `nginx.conf` yang sudah ada (termasuk proxy `/api/` ke service `backend`).
+- Dibuat `backend/.env` (gitignored, default sama seperti fallback di `config.py`) — sebelumnya tidak ada, `docker-compose.yml` gagal start tanpa file ini karena `env_file` mensyaratkan filenya ada.
+- [docker-compose.yml](docker-compose.yml): tambah volume `./data:/data` — dibutuhkan karena `loitering_ports_file` di config resolve ke `../data/ports.csv` relatif dari `/app` di container.
+- Ditambah `.dockerignore` di `backend/` dan `frontend/` (exclude `venv`/`node_modules`/dll).
+- **Bug ditemukan saat build**: `npm run build` (`tsc -b && vite build`) gagal — tidak ketauan sebelumnya karena `npm run dev` (dipakai di `run-dev.ps1`) tidak strict type-check. Diperbaiki di `MonthlyReportPage.tsx`:
+  - Import icon salah: `ErrorOutline` (tidak ada di `@mui/icons-material` versi terinstal) → `ErrorOutlined`.
+  - Type mismatch di `Tooltip formatter` Recharts: parameter diketik `number` padahal Recharts kirim `ValueType | undefined` — diperbaiki dengan `Number(value)`.
+- **Tervalidasi live**: `docker compose up -d --build` sukses, `GET /api/health` via backend langsung (`:8001`) dan via proxy nginx frontend (`:3000/api/health`) sama-sama `{"status":"ok","database":true,"redis":true}`.
+
+### 7. Menu Loitering khusus di sidebar
+- Sebelumnya Loitering cuma tab di dalam "Analisis Perilaku". Diekstrak jadi halaman standalone [LoiteringPage.tsx](frontend/src/pages/LoiteringPage.tsx) (dipakai ulang di tab lama juga, tidak duplikat kode).
+- Route baru `/loitering`, menu sidebar "Loitering" (icon `Anchor`) di bawah "Pertemuan Kapal".
+- Label grup sidebar "ANALISIS" diganti jadi "ANALISIS & DETEKSI ANOMALI".
+
+### 8. Fase 12b lanjutan — A4 Anomali Kinematik (SCA)
+- Diimplementasi di `anomaly_service.py`: `_detect_a4_for_vessel()`, 3 sub-jenis sesuai ANOMALY_ALGORITHM.md Bagian 5 A4 — `speed_change` (`|ΔSOG|/Δt > 5kn/menit`), `course_change` (`|ΔCOG| sirkular > 90°` saat SOG>3kn), `heading_cog_mismatch` (`|heading−COG| > 45°` saat SOG>3kn). Ambang tetap `[ADAPT]` (bukan quantile/mad per konteks — belum dikerjakan). TA (U-turn/berputar, butuh agregasi jendela) belum diimplementasi.
+- Query `detect_all()` diperluas ambil `cog_deg`, `heading_deg` — tuple row dari 4 jadi 6 kolom; semua unpacking A1/A2/A3 lama disesuaikan (`*_` trailing catch-all) supaya tidak pecah.
+- **Bug ditemukan & diperbaiki saat verifikasi live** (pola sama seperti noise A1/A2 sebelumnya): tanpa batas bawah Δt, laporan `dt_s=1` (umum di data kita) bikin jitter SOG 0,1kn diekstrapolasi jadi "akselerasi" 6kn/menit — 2281 dari 2616 kandidat awal semuanya di `dt_s=1`, pola seragam khas artefak, bukan akselerasi nyata. Ditambah `KINEMATIC_MIN_DT_S=10.0` (median interval lapor lokal) → total turun ke 818 event/hari, nilai jadi masuk akal (mis. `course_change` sekarang isinya U-turn asli Δ178-179°).
+- Halaman baru [KinematicAnomalyPage.tsx](frontend/src/pages/KinematicAnomalyPage.tsx), route `/anomaly/kinematic`, menu sidebar "Anomali Kinematik" (icon `Speed`) di bawah "Loitering".
+- Tab "Kelayakan Modul" di `/anomaly` diupdate: status A4 dari "belum dikerjakan" jadi live (status `warn` — karena TA belum ada).
+- Menu "Analisis Perilaku" **dihapus dari sidebar** (route `/behavior` tetap ada, cuma sudah tidak ada tautannya di menu — Pertemuan Kapal & Loitering yang tadinya jadi tab di situ sudah masing-masing punya menu sendiri).
+- Fix bug sidebar: `isActive` sebelumnya pakai `location.pathname.startsWith(item.path)` — akan salah nge-highlight dua menu sekaligus begitu ada path bersarang (`/anomaly` adalah prefix dari `/anomaly/kinematic`). Diganti exact-match.
+- Dokumen baru [TRANSSHIPMENT_ALGORITHM.md](TRANSSHIPMENT_ALGORITHM.md) — spesifikasi riset deteksi kandidat transshipment (encounter 2-kapal + loitering 1-kapal + klasifikasi K-means tingkat kecurigaan), disalin dari draft user; belum diimplementasi.
+
+### 9. Fase 13 — Menu Track Kapal di sidebar
+- **Temuan**: backend (`GET /api/vessels/{mmsi}/track`, downsample maks 2000 titik/48 jam, cache 15 menit) dan UI-nya (`VesselTrackDialog.tsx` — peta+polyline+playback slider+info SOG/COG/heading/nav-status) **sudah lengkap dari sesi sebelumnya**, dipicu tombol "Lihat Track" di tabel kapal (`/vessels` tab Tabel). Checklist Fase 13 di `development-plan.md` cuma belum di-centang (stale), bukan belum dikerjakan.
+- Diekstrak inti tampilan (peta, playback, panel info) dari `VesselTrackDialog.tsx` ke komponen reusable [VesselTrackViewer.tsx](frontend/src/components/vessel/VesselTrackViewer.tsx) — dipakai ulang oleh dialog (tetap ada, tak ada regresi di tabel kapal) dan halaman baru.
+- Halaman baru [VesselTrackPage.tsx](frontend/src/pages/VesselTrackPage.tsx) — pencarian kapal (`Autocomplete` + debounce 400ms ke `/api/vessels?search=`) lalu render `VesselTrackViewer` untuk kapal terpilih.
+- Route `/map/track`, menu sidebar "Track Kapal" (icon `Route`) tepat di bawah "Peta".
+- Bug kecil saat build: `params.InputProps` di `Autocomplete renderInput` tidak ada di versi MUI terpasang (tipe berubah) — disederhanakan, tidak gantung ke bentuk internal versi tertentu.
+- Docker frontend build sukses, `/map/track` dan `/api/vessels?search=` tervalidasi live.
+
 ### Belum selesai / item terbuka
 - Klasifikasi 3-jenis jump A1 (`isolated_outlier`/`single_axis`/`persistent_shift`) — prasyarat A2 & A8 supaya tidak tercampur noise.
-- A4–A8, B1–B3 (kinematik, encounter refinement, konteks, korroborasi, Isolation Forest, GeoTrackNet-lite) — belum diimplementasi, lihat matriks kelayakan di tab pertama `/anomaly`.
+- A4 TA (turning/U-turn, jendela geser), A5 (sudah ada versi loitering trajektori tersendiri, beda dari definisi TRANSSHIPMENT_ALGORITHM.md), A6–A8, B1–B3 — belum diimplementasi, lihat matriks kelayakan di tab pertama `/anomaly`.
 - Keputusan `drop_logic` loitering (`and` vs `or`, ANOMALY_ALGORITHM.md/loitering.md Bagian 9) — belum diputuskan user.
+- TRANSSHIPMENT_ALGORITHM.md — dokumen baru, belum ada baris implementasi (checklist Bagian 14 semua kosong).
 - Repo git belum di-commit/push.
