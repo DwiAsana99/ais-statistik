@@ -1,10 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
-import {
-  Box, Typography, Paper, Autocomplete, TextField, Chip,
-} from "@mui/material";
-import { Route } from "@mui/icons-material";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Route, Search } from "lucide-react";
 import api from "../api/client";
-import { THEME_COLORS } from "../utils/constants";
 import VesselTrackViewer from "../components/vessel/VesselTrackViewer";
 import type { VesselListItem } from "../types";
 
@@ -14,6 +10,8 @@ export default function VesselTrackPage() {
   const [options, setOptions] = useState<VesselListItem[]>([]);
   const [searching, setSearching] = useState(false);
   const [vessel, setVessel] = useState<VesselListItem | null>(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(inputValue), 400);
@@ -39,62 +37,89 @@ export default function VesselTrackPage() {
 
   useEffect(() => { search(debounced); }, [debounced, search]);
 
-  return (
-    <Box>
-      <Typography variant="h6" sx={{ color: THEME_COLORS.text, fontWeight: 600, mb: 3 }}>
-        Track Kapal
-      </Typography>
+  // Close dropdown on outside click
+  useEffect(() => {
+    const onClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
 
-      <Paper
-        sx={{ p: 2.5, mb: 2.5, backgroundColor: THEME_COLORS.surface, border: `1px solid ${THEME_COLORS.border}`, borderRadius: 2 }}
-        elevation={0}
-      >
-        <Autocomplete
-          fullWidth
-          options={options}
-          value={vessel}
-          onChange={(_, v) => setVessel(v)}
-          inputValue={inputValue}
-          onInputChange={(_, v) => setInputValue(v)}
-          getOptionLabel={(o) => o.name || `MMSI ${o.mmsi}`}
-          isOptionEqualToValue={(o, v) => o.mmsi === v.mmsi}
-          loading={searching}
-          noOptionsText={inputValue ? "Kapal tidak ditemukan" : "Ketik nama, MMSI, atau call sign kapal"}
-          renderOption={(props, option) => (
-            <Box component="li" {...props} key={option.mmsi} sx={{ display: "flex", alignItems: "center", gap: 1.5, justifyContent: "space-between" }}>
-              <Box>
-                <Typography sx={{ fontSize: 13, fontWeight: 600 }}>{option.name || `MMSI ${option.mmsi}`}</Typography>
-                <Typography sx={{ fontSize: 11, color: THEME_COLORS.textSecondary }}>
-                  MMSI {option.mmsi}{option.call_sign ? ` · ${option.call_sign}` : ""}
-                </Typography>
-              </Box>
-              {option.ship_type_group && (
-                <Chip label={option.ship_type_group} size="small" sx={{ height: 20, fontSize: 10 }} />
+  const selectVessel = (v: VesselListItem) => {
+    setVessel(v);
+    setInputValue(v.name || `MMSI ${v.mmsi}`);
+    setShowDropdown(false);
+  };
+
+  return (
+    <div>
+      <p className="mb-3 text-lg font-semibold text-base-content">Track Kapal</p>
+
+      <div className="card mb-2.5 border border-base-300 bg-base-100 p-2.5">
+        <div ref={containerRef} className="relative">
+          <label className="input input-sm w-full">
+            <Search size={18} className="text-base-content/60" />
+            <input
+              type="text"
+              placeholder="Cari kapal — nama, MMSI, atau call sign..."
+              value={inputValue}
+              onChange={(e) => {
+                setInputValue(e.target.value);
+                setVessel(null);
+                setShowDropdown(true);
+              }}
+              onFocus={() => setShowDropdown(true)}
+            />
+            {searching && <span className="loading loading-spinner loading-xs text-secondary" />}
+          </label>
+
+          {showDropdown && (
+            <ul className="menu absolute top-full left-0 z-20 mt-1 w-full rounded-box border border-base-300 bg-base-100 p-1 shadow-lg">
+              {options.length === 0 ? (
+                <li className="px-3 py-2 text-[13px] text-base-content/60">
+                  {inputValue ? "Kapal tidak ditemukan" : "Ketik nama, MMSI, atau call sign kapal"}
+                </li>
+              ) : (
+                options.map((option) => (
+                  <li key={option.mmsi}>
+                    <button
+                      type="button"
+                      className="flex items-center justify-between gap-1.5"
+                      onClick={() => selectVessel(option)}
+                    >
+                      <span>
+                        <span className="block text-[13px] font-semibold text-base-content">
+                          {option.name || `MMSI ${option.mmsi}`}
+                        </span>
+                        <span className="block text-[11px] text-base-content/60">
+                          MMSI {option.mmsi}{option.call_sign ? ` · ${option.call_sign}` : ""}
+                        </span>
+                      </span>
+                      {option.ship_type_group && (
+                        <span className="badge badge-sm">{option.ship_type_group}</span>
+                      )}
+                    </button>
+                  </li>
+                ))
               )}
-            </Box>
+            </ul>
           )}
-          renderInput={(params) => (
-            <TextField {...params} placeholder="Cari kapal — nama, MMSI, atau call sign..." />
-          )}
-        />
-      </Paper>
+        </div>
+      </div>
 
       {vessel ? (
         <VesselTrackViewer key={vessel.mmsi} vessel={vessel} />
       ) : (
-        <Paper
-          sx={{
-            p: 6, textAlign: "center", backgroundColor: THEME_COLORS.surface,
-            border: `1px solid ${THEME_COLORS.border}`, borderRadius: 2,
-          }}
-          elevation={0}
-        >
-          <Route sx={{ fontSize: 40, color: THEME_COLORS.textSecondary, opacity: 0.5, mb: 1 }} />
-          <Typography sx={{ color: THEME_COLORS.textSecondary, fontSize: 13 }}>
+        <div className="card border border-base-300 bg-base-100 p-6 text-center">
+          <Route size={40} className="mx-auto mb-1 text-base-content/60 opacity-50" />
+          <p className="text-[13px] text-base-content/60">
             Pilih kapal di atas untuk melihat riwayat track posisinya di peta.
-          </Typography>
-        </Paper>
+          </p>
+        </div>
       )}
-    </Box>
+    </div>
   );
 }

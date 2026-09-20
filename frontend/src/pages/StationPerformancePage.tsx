@@ -1,15 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
-import {
-  Box, Typography, CircularProgress, Alert, Button, Paper, Chip,
-  Table, TableBody, TableCell, TableHead, TableRow,
-} from "@mui/material";
-import { Grid } from "@mui/material";
-import { Router, SignalCellularAlt, DirectionsBoat, Speed } from "@mui/icons-material";
+import { Router, SignalHigh, Ship, Gauge } from "lucide-react";
 import KpiCard from "../components/cards/KpiCard";
 import BarChartCard from "../components/charts/BarChartCard";
 import api from "../api/client";
 import type { StationPerformance, StationKpis } from "../types";
-import { THEME_COLORS } from "../utils/constants";
 import { formatNumber } from "../utils/formatters";
 
 const STATUS_COLOR: Record<string, string> = {
@@ -26,36 +20,15 @@ const STATUS_LABEL: Record<string, string> = {
   unknown:  "Tidak Diketahui",
 };
 
-const cellSx = {
-  color: THEME_COLORS.text,
-  borderBottom: `1px solid ${THEME_COLORS.border}`,
-  fontSize: 13,
-  py: 1,
-};
-const headCellSx = {
-  ...cellSx,
-  fontWeight: 600,
-  color: THEME_COLORS.textSecondary,
-  fontSize: 11,
-  textTransform: "uppercase" as const,
-  letterSpacing: 0.5,
-  backgroundColor: THEME_COLORS.surface,
-};
-
 function StatusChip({ status }: { status: string }) {
+  const color = STATUS_COLOR[status] ?? "#8899AA";
   return (
-    <Chip
-      label={STATUS_LABEL[status] ?? status}
-      size="small"
-      sx={{
-        backgroundColor: `${STATUS_COLOR[status] ?? "#8899AA"}22`,
-        color: STATUS_COLOR[status] ?? THEME_COLORS.textSecondary,
-        border: `1px solid ${STATUS_COLOR[status] ?? "#8899AA"}55`,
-        fontWeight: 600,
-        fontSize: 11,
-        height: 22,
-      }}
-    />
+    <span
+      className="badge badge-sm h-[22px] border font-semibold"
+      style={{ backgroundColor: `${color}22`, color, borderColor: `${color}55` }}
+    >
+      {STATUS_LABEL[status] ?? status}
+    </span>
   );
 }
 
@@ -107,29 +80,24 @@ export default function StationPerformancePage() {
   const totalCount = kpis?.total_stations ?? 0;
 
   return (
-    <Box>
-      <Typography variant="h6" sx={{ color: THEME_COLORS.text, fontWeight: 600, mb: 3 }}>
-        Performa Stasiun
-      </Typography>
+    <div>
+      <p className="mb-3 text-lg font-semibold text-base-content">Performa Stasiun</p>
 
       {error && (
-        <Alert
-          severity="error"
-          sx={{ mb: 2.5 }}
-          action={<Button color="inherit" size="small" onClick={load}>Coba Lagi</Button>}
-        >
-          {error}
-        </Alert>
+        <div className="alert alert-error mb-5">
+          <span>{error}</span>
+          <button className="btn btn-ghost btn-sm" onClick={load}>Coba Lagi</button>
+        </div>
       )}
 
       {loading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", pt: 10 }}>
-          <CircularProgress sx={{ color: THEME_COLORS.secondary }} />
-        </Box>
+        <div className="flex justify-center pt-16">
+          <span className="loading loading-spinner text-secondary" />
+        </div>
       ) : !error && (
-        <Grid container spacing={2.5}>
+        <div className="grid grid-cols-12 gap-5">
           {/* KPI cards */}
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <div className="col-span-12 sm:col-span-6 md:col-span-3">
             <KpiCard
               title="Stasiun Online / Total"
               value={onlineCount}
@@ -137,16 +105,16 @@ export default function StationPerformancePage() {
               icon={<Router />}
               color="#59a14f"
             />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          </div>
+          <div className="col-span-12 sm:col-span-6 md:col-span-3">
             <KpiCard
               title="Cakupan Kapal"
               value={kpis?.total_vessel_coverage ?? 0}
-              icon={<DirectionsBoat />}
+              icon={<Ship />}
               color="#4e79a7"
             />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          </div>
+          <div className="col-span-12 sm:col-span-6 md:col-span-3">
             <KpiCard
               title="Throughput Total (msg/jam)"
               value={kpis?.total_throughput_per_hour ?? 0}
@@ -155,170 +123,124 @@ export default function StationPerformancePage() {
                   ? `${formatNumber(Math.round(kpis.total_throughput_per_hour))}/jam`
                   : "—"
               }
-              icon={<Speed />}
+              icon={<Gauge />}
               color="#D4930A"
             />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          </div>
+          <div className="col-span-12 sm:col-span-6 md:col-span-3">
             <KpiCard
               title="Stasiun Degraded / Offline"
               value={(kpis?.degraded_count ?? 0) + (kpis?.offline_count ?? 0)}
               valueText={`${kpis?.degraded_count ?? 0} degraded · ${kpis?.offline_count ?? 0} offline`}
-              icon={<SignalCellularAlt />}
+              icon={<SignalHigh />}
               color="#e15759"
             />
-          </Grid>
+          </div>
 
           {/* Status badge grid */}
           {stations.length > 0 && (
-            <Grid size={{ xs: 12 }}>
-              <Paper
-                sx={{
-                  p: 2.5,
-                  backgroundColor: THEME_COLORS.surface,
-                  border: `1px solid ${THEME_COLORS.border}`,
-                  borderRadius: 2,
-                }}
-                elevation={0}
-              >
-                <Typography sx={{ fontSize: 14, fontWeight: 600, color: THEME_COLORS.text, mb: 2 }}>
-                  Status Stasiun
-                </Typography>
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+            <div className="col-span-12">
+              <div className="card border border-base-300 bg-base-100 p-5">
+                <p className="mb-3 text-sm font-semibold text-base-content">Status Stasiun</p>
+                <div className="flex flex-wrap gap-2">
                   {stations.map((s) => (
-                    <Box
+                    <div
                       key={s.station_id}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 0.75,
-                        px: 1.5,
-                        py: 0.75,
-                        borderRadius: 1,
-                        backgroundColor: THEME_COLORS.surfaceLight,
-                        border: `1px solid ${STATUS_COLOR[s.status] ?? THEME_COLORS.border}44`,
-                        minWidth: 160,
-                      }}
+                      className="flex min-w-[160px] items-center gap-2 rounded-lg border bg-base-200 px-3 py-1.5"
+                      style={{ borderColor: `${STATUS_COLOR[s.status] ?? "var(--color-base-300)"}44` }}
                     >
-                      <Box
-                        sx={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: "50%",
-                          backgroundColor: STATUS_COLOR[s.status] ?? THEME_COLORS.border,
-                          flexShrink: 0,
-                        }}
+                      <div
+                        className="h-2 w-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: STATUS_COLOR[s.status] ?? "var(--color-base-300)" }}
                       />
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography sx={{ fontSize: 12, fontWeight: 600, color: THEME_COLORS.text, lineHeight: 1.2 }}>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs leading-tight font-semibold text-base-content">
                           {s.station_name ?? s.station_id}
-                        </Typography>
-                        <Typography sx={{ fontSize: 10, color: THEME_COLORS.textSecondary }}>
-                          {s.vessel_count} kapal
-                        </Typography>
-                      </Box>
-                    </Box>
+                        </p>
+                        <p className="text-[10px] text-base-content/60">{s.vessel_count} kapal</p>
+                      </div>
+                    </div>
                   ))}
-                </Box>
-              </Paper>
-            </Grid>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Bar charts */}
           {barData.length > 0 && (
-            <Grid size={{ xs: 12, lg: throughputBarData.length > 0 ? 6 : 12 }}>
+            <div className={throughputBarData.length > 0 ? "col-span-12 lg:col-span-6" : "col-span-12"}>
               <BarChartCard
                 title="Cakupan Kapal per Stasiun"
                 data={barData}
                 color="#4e79a7"
                 height={320}
               />
-            </Grid>
+            </div>
           )}
           {throughputBarData.length > 0 && (
-            <Grid size={{ xs: 12, lg: barData.length > 0 ? 6 : 12 }}>
+            <div className={barData.length > 0 ? "col-span-12 lg:col-span-6" : "col-span-12"}>
               <BarChartCard
                 title="Throughput per Stasiun (msg/jam, 7 hari)"
                 data={throughputBarData}
                 color="#D4930A"
                 height={320}
               />
-            </Grid>
+            </div>
           )}
 
           {/* Detail table */}
           {stations.length > 0 && (
-            <Grid size={{ xs: 12 }}>
-              <Paper
-                sx={{
-                  backgroundColor: THEME_COLORS.surface,
-                  border: `1px solid ${THEME_COLORS.border}`,
-                  borderRadius: 2,
-                  overflow: "hidden",
-                }}
-                elevation={0}
-              >
-                <Box sx={{ px: 2.5, py: 1.5, borderBottom: `1px solid ${THEME_COLORS.border}` }}>
-                  <Typography sx={{ fontSize: 14, fontWeight: 600, color: THEME_COLORS.text }}>
-                    Detail Stasiun
-                  </Typography>
-                </Box>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={headCellSx}>ID Stasiun</TableCell>
-                      <TableCell sx={headCellSx}>MMSI</TableCell>
-                      <TableCell sx={headCellSx}>Status</TableCell>
-                      <TableCell sx={{ ...headCellSx, textAlign: "right" }}>Kapal</TableCell>
-                      <TableCell sx={{ ...headCellSx, textAlign: "right" }}>msg/jam</TableCell>
-                      <TableCell sx={headCellSx}>Terakhir Lapor</TableCell>
-                      <TableCell sx={headCellSx}>Koordinat</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {stations.map((s) => (
-                      <TableRow
-                        key={s.station_id}
-                        hover
-                        sx={{ "&:hover": { backgroundColor: `${THEME_COLORS.surfaceLight} !important` } }}
-                      >
-                        <TableCell sx={{ ...cellSx, fontFamily: "monospace", fontWeight: 500 }}>
-                          {s.station_name ?? s.station_id}
-                        </TableCell>
-                        <TableCell sx={{ ...cellSx, fontFamily: "monospace", color: THEME_COLORS.textSecondary }}>
-                          {s.mmsi ?? "—"}
-                        </TableCell>
-                        <TableCell sx={cellSx}>
-                          <StatusChip status={s.status} />
-                        </TableCell>
-                        <TableCell sx={{ ...cellSx, textAlign: "right", fontFamily: "monospace" }}>
-                          {formatNumber(s.vessel_count)}
-                        </TableCell>
-                        <TableCell sx={{ ...cellSx, textAlign: "right", fontFamily: "monospace" }}>
-                          {s.msg_per_hour > 0 ? formatNumber(Math.round(s.msg_per_hour)) : "—"}
-                        </TableCell>
-                        <TableCell sx={{ ...cellSx, color: THEME_COLORS.textSecondary, fontSize: 12 }}>
-                          {s.last_seen
-                            ? new Date(s.last_seen).toLocaleString("id-ID", {
-                                dateStyle: "short",
-                                timeStyle: "short",
-                              })
-                            : "—"}
-                        </TableCell>
-                        <TableCell sx={{ ...cellSx, color: THEME_COLORS.textSecondary, fontSize: 11, fontFamily: "monospace" }}>
-                          {s.lat != null && s.lon != null
-                            ? `${s.lat.toFixed(3)}, ${s.lon.toFixed(3)}`
-                            : "—"}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </Paper>
-            </Grid>
+            <div className="col-span-12">
+              <div className="card overflow-hidden border border-base-300 bg-base-100">
+                <div className="border-b border-base-300 px-5 py-3">
+                  <p className="text-sm font-semibold text-base-content">Detail Stasiun</p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="table table-sm">
+                    <thead>
+                      <tr>
+                        <th className="bg-base-100 text-[11px] font-semibold tracking-wide text-base-content/60 uppercase">ID Stasiun</th>
+                        <th className="bg-base-100 text-[11px] font-semibold tracking-wide text-base-content/60 uppercase">MMSI</th>
+                        <th className="bg-base-100 text-[11px] font-semibold tracking-wide text-base-content/60 uppercase">Status</th>
+                        <th className="bg-base-100 text-right text-[11px] font-semibold tracking-wide text-base-content/60 uppercase">Kapal</th>
+                        <th className="bg-base-100 text-right text-[11px] font-semibold tracking-wide text-base-content/60 uppercase">msg/jam</th>
+                        <th className="bg-base-100 text-[11px] font-semibold tracking-wide text-base-content/60 uppercase">Terakhir Lapor</th>
+                        <th className="bg-base-100 text-[11px] font-semibold tracking-wide text-base-content/60 uppercase">Koordinat</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stations.map((s) => (
+                        <tr key={s.station_id} className="hover:bg-base-200">
+                          <td className="font-mono font-medium">{s.station_name ?? s.station_id}</td>
+                          <td className="font-mono text-base-content/60">{s.mmsi ?? "—"}</td>
+                          <td><StatusChip status={s.status} /></td>
+                          <td className="text-right font-mono">{formatNumber(s.vessel_count)}</td>
+                          <td className="text-right font-mono">
+                            {s.msg_per_hour > 0 ? formatNumber(Math.round(s.msg_per_hour)) : "—"}
+                          </td>
+                          <td className="text-xs text-base-content/60">
+                            {s.last_seen
+                              ? new Date(s.last_seen).toLocaleString("id-ID", {
+                                  dateStyle: "short",
+                                  timeStyle: "short",
+                                })
+                              : "—"}
+                          </td>
+                          <td className="font-mono text-[11px] text-base-content/60">
+                            {s.lat != null && s.lon != null
+                              ? `${s.lat.toFixed(3)}, ${s.lon.toFixed(3)}`
+                              : "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           )}
-        </Grid>
+        </div>
       )}
-    </Box>
+    </div>
   );
 }

@@ -1,13 +1,25 @@
-import { useState } from "react";
-import { Box, useMediaQuery, useTheme } from "@mui/material";
+import { useState, useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import { useThemeStore } from "../../stores/themeStore";
-import { SIDEBAR_WIDTH, SIDEBAR_COLLAPSED_WIDTH, HEADER_HEIGHT, THEME_COLORS } from "../../utils/constants";
+import { SIDEBAR_WIDTH, SIDEBAR_COLLAPSED_WIDTH, HEADER_HEIGHT } from "../../utils/constants";
+
+const MOBILE_BREAKPOINT = "(max-width: 899px)";
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia(MOBILE_BREAKPOINT).matches);
+  useEffect(() => {
+    const mql = window.matchMedia(MOBILE_BREAKPOINT);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, []);
+  return isMobile;
+}
 
 export default function MainLayout() {
-  const isMobile = useMediaQuery(useTheme().breakpoints.down("md"));
+  const isMobile = useIsMobile();
   const [desktopExpanded, setDesktopExpanded] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const mode = useThemeStore((s) => s.mode);
@@ -16,7 +28,7 @@ export default function MainLayout() {
   const sidebarWidth = isMobile ? 0 : desktopExpanded ? SIDEBAR_WIDTH : SIDEBAR_COLLAPSED_WIDTH;
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", backgroundColor: THEME_COLORS.background }}>
+    <div className="flex min-h-screen bg-base-100">
       <Sidebar
         mobile={isMobile}
         open={isMobile ? mobileOpen : desktopExpanded}
@@ -29,23 +41,16 @@ export default function MainLayout() {
         onToggleTheme={toggleTheme}
         onMenuClick={isMobile ? () => setMobileOpen(!mobileOpen) : undefined}
       />
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          width: { xs: "100%", md: `calc(100% - ${sidebarWidth}px)` },
-          pt: `${HEADER_HEIGHT + 24}px`,
-          px: { xs: 1.5, sm: 3 },
-          pb: 3,
-          minHeight: "100vh",
-          minWidth: 0,
-          transition: "margin-left 0.2s ease, width 0.2s ease",
+      <main
+        className="min-h-screen min-w-0 flex-1 px-3 pb-6 transition-[margin-left,width] duration-200 ease-in-out sm:px-6"
+        style={{
+          width: `calc(100% - ${sidebarWidth}px)`,
+          marginLeft: sidebarWidth,
+          paddingTop: HEADER_HEIGHT + 24,
         }}
       >
-        <Box key={mode}>
-          <Outlet />
-        </Box>
-      </Box>
-    </Box>
+        <Outlet />
+      </main>
+    </div>
   );
 }

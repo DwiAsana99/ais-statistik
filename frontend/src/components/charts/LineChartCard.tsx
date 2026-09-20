@@ -1,6 +1,5 @@
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
-import { Paper, Typography, Box } from "@mui/material";
-import { THEME_COLORS } from "../../utils/constants";
+import { CHART_DEFAULT_ACCENT } from "../../utils/chartColors";
 import type { TimeSeriesPoint } from "../../types";
 
 interface LineChartCardProps {
@@ -10,46 +9,35 @@ interface LineChartCardProps {
   color?: string;
 }
 
-export default function LineChartCard({ title, data, height = 300, color = "#D4930A" }: LineChartCardProps) {
+export default function LineChartCard({ title, data, height = 300, color = CHART_DEFAULT_ACCENT }: LineChartCardProps) {
   return (
-    <Paper
-      sx={{
-        p: title ? 2.5 : 0,
-        backgroundColor: "transparent",
-        height: "100%",
-      }}
-      elevation={0}
-    >
-      {title && (
-        <Typography variant="subtitle2" sx={{ color: THEME_COLORS.text, fontWeight: 600, mb: 2 }}>
-          {title}
-        </Typography>
-      )}
-      <Box sx={{ width: "100%", height }}>
+    <div className={title ? "p-5" : ""}>
+      {title && <p className="mb-4 text-sm font-semibold text-base-content">{title}</p>}
+      <div style={{ width: "100%", height }}>
         <ResponsiveContainer>
           <LineChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={THEME_COLORS.border} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-base-300)" />
             <XAxis
               dataKey="timestamp"
-              tick={{ fill: THEME_COLORS.textSecondary, fontSize: 11 }}
-              axisLine={{ stroke: THEME_COLORS.border }}
+              tick={{ fill: "var(--chart-muted)", fontSize: 11 }}
+              axisLine={{ stroke: "var(--color-base-300)" }}
             />
             <YAxis
-              tick={{ fill: THEME_COLORS.textSecondary, fontSize: 11 }}
-              axisLine={{ stroke: THEME_COLORS.border }}
+              tick={{ fill: "var(--chart-muted)", fontSize: 11 }}
+              axisLine={{ stroke: "var(--color-base-300)" }}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: THEME_COLORS.surfaceLight,
-                border: `1px solid ${THEME_COLORS.border}`,
+                backgroundColor: "var(--color-base-200)",
+                border: "1px solid var(--color-base-300)",
                 borderRadius: 8,
-                color: THEME_COLORS.text,
+                color: "var(--color-base-content)",
               }}
             />
             <Line type="monotone" dataKey="value" stroke={color} strokeWidth={2} dot={false} />
           </LineChart>
         </ResponsiveContainer>
-      </Box>
-    </Paper>
+      </div>
+    </div>
   );
 }

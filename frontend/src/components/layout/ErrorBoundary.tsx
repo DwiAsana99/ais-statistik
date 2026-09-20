@@ -1,6 +1,4 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
-import { Box, Typography, Button } from "@mui/material";
-import { THEME_COLORS } from "../../utils/constants";
 
 interface Props {
   children: ReactNode;
@@ -25,33 +23,19 @@ export default class ErrorBoundary extends Component<Props, State> {
     if (!this.state.error) return this.props.children;
 
     return (
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100vh",
-          gap: 2,
-          backgroundColor: THEME_COLORS.background,
-          color: THEME_COLORS.text,
-        }}
-      >
-        <Typography variant="h6">Terjadi kesalahan tak terduga</Typography>
-        <Typography sx={{ color: THEME_COLORS.textSecondary, fontSize: 13 }}>
-          {this.state.error.message}
-        </Typography>
-        <Button
-          variant="contained"
+      <div className="flex h-screen flex-col items-center justify-center gap-3 bg-base-100 text-base-content">
+        <h6 className="text-lg font-semibold">Terjadi kesalahan tak terduga</h6>
+        <p className="text-sm text-base-content/60">{this.state.error.message}</p>
+        <button
+          className="btn btn-secondary"
           onClick={() => {
             this.setState({ error: null });
             window.location.reload();
           }}
-          sx={{ backgroundColor: THEME_COLORS.secondary }}
         >
           Muat Ulang
-        </Button>
-      </Box>
+        </button>
+      </div>
     );
   }
 }

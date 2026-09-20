@@ -1,5 +1,3 @@
-import { Paper, Typography, Box, Chip } from "@mui/material";
-import { THEME_COLORS } from "../../utils/constants";
 import { formatNumber } from "../../utils/formatters";
 
 interface KpiCardProps {
@@ -17,69 +15,39 @@ export default function KpiCard({
   title,
   value,
   icon,
-  color = THEME_COLORS.secondary,
+  color = "var(--color-secondary)",
   subtitle,
   valueText,
   statusLabel,
   statusColor,
 }: KpiCardProps) {
+  const chipColor = statusColor || color;
+
   return (
-    <Paper
-      sx={{
-        p: 2.5,
-        backgroundColor: THEME_COLORS.surface,
-        border: `1px solid ${THEME_COLORS.border}`,
-        borderRadius: 2,
-        display: "flex",
-        alignItems: "center",
-        gap: 2,
-      }}
-      elevation={0}
-    >
-      <Box
-        sx={{
-          width: 48,
-          height: 48,
-          borderRadius: 2,
-          backgroundColor: `${color}20`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: color,
-          flexShrink: 0,
-        }}
+    <div className="flex items-center gap-4 rounded-xl border border-base-300 bg-base-100 p-5">
+      <div
+        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg"
+        style={{ backgroundColor: `${color}20`, color }}
       >
         {icon}
-      </Box>
-      <Box sx={{ minWidth: 0 }}>
-        <Typography variant="caption" sx={{ color: THEME_COLORS.textSecondary, fontSize: 12 }}>
-          {title}
-        </Typography>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
-          <Typography variant="h5" sx={{ fontWeight: 700, color: THEME_COLORS.text, lineHeight: 1.2 }}>
+      </div>
+      <div className="min-w-0">
+        <p className="text-xs text-base-content/60">{title}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-2xl leading-tight font-bold text-base-content">
             {valueText !== undefined ? valueText : formatNumber(value)}
-          </Typography>
+          </p>
           {statusLabel && (
-            <Chip
-              label={statusLabel}
-              size="small"
-              sx={{
-                height: 20,
-                fontSize: 10,
-                fontWeight: 600,
-                backgroundColor: `${statusColor || color}20`,
-                color: statusColor || color,
-                border: `1px solid ${statusColor || color}40`,
-              }}
-            />
+            <span
+              className="badge badge-sm h-5 border font-semibold"
+              style={{ backgroundColor: `${chipColor}20`, color: chipColor, borderColor: `${chipColor}40` }}
+            >
+              {statusLabel}
+            </span>
           )}
-        </Box>
-        {subtitle && (
-          <Typography variant="caption" sx={{ color: THEME_COLORS.textSecondary, fontSize: 11 }}>
-            {subtitle}
-          </Typography>
-        )}
-      </Box>
-    </Paper>
+        </div>
+        {subtitle && <p className="text-[11px] text-base-content/60">{subtitle}</p>}
+      </div>
+    </div>
   );
 }

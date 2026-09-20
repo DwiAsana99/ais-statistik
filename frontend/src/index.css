@@ -1,34 +1,117 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: maritime --default, maritime-dark --prefersdark;
 }
 
-body {
-  background-color: #0F1B2D;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* Maritime brand: #003B5C navy, #0C7B93 teal, #94D2BD seafoam, #EE9B00 amber, #F6F8FF mist. */
+@plugin "daisyui/theme" {
+  name: "maritime";
+  color-scheme: light;
+
+  --color-base-100: #F6F8FF;
+  --color-base-200: #E9ECF7;
+  --color-base-300: #D6DBEC;
+  --color-base-content: #1A2433;
+
+  --color-primary: #003B5C;
+  --color-primary-content: #F6F8FF;
+  --color-secondary: #0C7B93;
+  --color-secondary-content: #F6F8FF;
+  --color-accent: #94D2BD;
+  --color-accent-content: #003B5C;
+  --color-neutral: #003B5C;
+  --color-neutral-content: #F6F8FF;
+
+  --color-info: #2D9CDB;
+  --color-info-content: #F6F8FF;
+  --color-success: #2E8B57;
+  --color-success-content: #F6F8FF;
+  --color-warning: #EE9B00;
+  --color-warning-content: #003B5C;
+  --color-error: #E5484D;
+  --color-error-content: #F6F8FF;
+
+  /* Categorical chart series — validated via dataviz skill's validate_palette.js
+     (adjacent + circular/donut pairlist, both hard gates pass at light mode). */
+  --chart-1: #0891A8; /* teal */
+  --chart-2: #E08E00; /* amber */
+  --chart-3: #C0508C; /* magenta */
+  --chart-4: #3B72C4; /* blue */
+  --chart-5: #2FA173; /* seagreen */
+  --chart-6: #7C5CBF; /* violet */
+  --chart-7: #D9534F; /* coral-red */
+  --chart-muted: #5B6B82; /* axis/tick text */
 }
 
-#root {
-  min-height: 100vh;
+@plugin "daisyui/theme" {
+  name: "maritime-dark";
+  color-scheme: dark;
+
+  --color-base-100: #05141F;
+  --color-base-200: #0A2233;
+  --color-base-300: #123044;
+  --color-base-content: #E8ECF1;
+
+  --color-primary: #003B5C;
+  --color-primary-content: #F6F8FF;
+  --color-secondary: #0C7B93;
+  --color-secondary-content: #F6F8FF;
+  --color-accent: #94D2BD;
+  --color-accent-content: #003B5C;
+  --color-neutral: #123044;
+  --color-neutral-content: #E8ECF1;
+
+  --color-info: #2D9CDB;
+  --color-info-content: #05141F;
+  --color-success: #2E8B57;
+  --color-success-content: #F6F8FF;
+  --color-warning: #EE9B00;
+  --color-warning-content: #05141F;
+  --color-error: #E5484D;
+  --color-error-content: #F6F8FF;
+
+  /* Same slot order as light, steps re-picked into the dark OKLCH band (0.48–0.67)
+     — validated (adjacent + circular) against the maritime-dark surface #05141F. */
+  --chart-1: #1D96AC;
+  --chart-2: #C77E00;
+  --chart-3: #B85C93;
+  --chart-4: #5A8FDE;
+  --chart-5: #2E9E76;
+  --chart-6: #9678D6;
+  --chart-7: #D96460;
+  --chart-muted: #8899AA; /* axis/tick text */
 }
 
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
 
-::-webkit-scrollbar-track {
-  background: #0F1B2D;
-}
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-::-webkit-scrollbar-thumb {
-  background: #2A3F5F;
-  border-radius: 3px;
-}
+  #root {
+    min-height: 100vh;
+  }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #3A5580;
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--color-base-100);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-base-300);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-primary);
+  }
 }

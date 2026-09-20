@@ -1,31 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
-import {
-  Box, Typography, Paper, Chip, Alert, Grid, Button, CircularProgress,
-  Table, TableBody, TableCell, TableHead, TableRow,
-} from "@mui/material";
-import { Speed, Explore, CompareArrows } from "@mui/icons-material";
+import { Gauge, Compass, ArrowLeftRight } from "lucide-react";
 import KpiCard from "../components/cards/KpiCard";
 import BarChartCard from "../components/charts/BarChartCard";
 import api from "../api/client";
-import { THEME_COLORS } from "../utils/constants";
 import { formatNumber } from "../utils/formatters";
 import type { AnomalyEvent } from "../types";
-
-const cellSx = {
-  color: THEME_COLORS.text,
-  borderBottom: `1px solid ${THEME_COLORS.border}`,
-  fontSize: 13,
-  py: 1,
-};
-const headCellSx = {
-  ...cellSx,
-  fontWeight: 600,
-  color: THEME_COLORS.textSecondary,
-  fontSize: 11,
-  textTransform: "uppercase" as const,
-  letterSpacing: 0.5,
-  backgroundColor: THEME_COLORS.surface,
-};
 
 const SUBTYPE_LABEL: Record<string, string> = {
   speed_change: "Perubahan Kecepatan",
@@ -39,16 +18,14 @@ const SUBTYPE_COLOR: Record<string, string> = {
 };
 
 function SubtypeChip({ subtype }: { subtype: string }) {
-  const color = SUBTYPE_COLOR[subtype] ?? THEME_COLORS.textSecondary;
+  const color = SUBTYPE_COLOR[subtype] ?? "var(--chart-muted)";
   return (
-    <Chip
-      label={SUBTYPE_LABEL[subtype] ?? subtype}
-      size="small"
-      sx={{
-        backgroundColor: `${color}22`, color, border: `1px solid ${color}55`,
-        fontWeight: 600, fontSize: 11, height: 22,
-      }}
-    />
+    <span
+      className="badge badge-sm border font-semibold"
+      style={{ backgroundColor: `${color}22`, color, borderColor: `${color}55` }}
+    >
+      {SUBTYPE_LABEL[subtype] ?? subtype}
+    </span>
   );
 }
 
@@ -100,86 +77,81 @@ export default function KinematicAnomalyPage() {
   const top30 = [...items].sort((a, b) => (b.score ?? 0) - (a.score ?? 0)).slice(0, 30);
 
   return (
-    <Box>
-      <Typography variant="h6" sx={{ color: THEME_COLORS.text, fontWeight: 600, mb: 3 }}>
-        Anomali Kinematik
-      </Typography>
+    <div>
+      <p className="mb-3 text-lg font-semibold text-base-content">Anomali Kinematik</p>
 
       {loading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", pt: 8 }}>
-          <CircularProgress sx={{ color: THEME_COLORS.secondary }} />
-        </Box>
+        <div className="flex justify-center pt-8">
+          <span className="loading loading-spinner text-secondary" />
+        </div>
       ) : error ? (
-        <Alert severity="error" action={<Button color="inherit" size="small" onClick={load}>Coba Lagi</Button>}>
-          {error}
-        </Alert>
+        <div className="alert alert-error">
+          <span>{error}</span>
+          <button className="btn btn-ghost btn-sm" onClick={load}>Coba Lagi</button>
+        </div>
       ) : (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-          <Alert severity="info" sx={{ backgroundColor: THEME_COLORS.surfaceLight, color: THEME_COLORS.text }}>
-            Deteksi A4 (SCA — Speed &amp; Course Anomaly, ANOMALY_ALGORITHM.md Bagian 5). Ambang tetap <code>[ADAPT]</code>,
-            belum dikalibrasi per konteks (tipe kapal × wilayah). 3 sub-jenis: <strong>perubahan kecepatan</strong> tiba-tiba
-            (&gt;5 kn/menit), <strong>perubahan arah</strong> tiba-tiba (&gt;90° dalam ≤5 menit saat SOG&gt;3kn), dan
-            <strong> heading vs COG</strong> menyimpang jauh (&gt;45° saat SOG&gt;3kn). TA (putaran/U-turn) belum
-            diimplementasi.
-          </Alert>
+        <div className="flex flex-col gap-2.5">
+          <div className="alert bg-base-200 text-base-content">
+            <span>
+              Deteksi A4 (SCA — Speed &amp; Course Anomaly, ANOMALY_ALGORITHM.md Bagian 5). Ambang tetap <code>[ADAPT]</code>,
+              belum dikalibrasi per konteks (tipe kapal × wilayah). 3 sub-jenis: <strong>perubahan kecepatan</strong> tiba-tiba
+              (&gt;5 kn/menit), <strong>perubahan arah</strong> tiba-tiba (&gt;90° dalam ≤5 menit saat SOG&gt;3kn), dan
+              <strong> heading vs COG</strong> menyimpang jauh (&gt;45° saat SOG&gt;3kn). TA (putaran/U-turn) belum
+              diimplementasi.
+            </span>
+          </div>
 
-          <Grid container spacing={2.5}>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              <KpiCard title="Perubahan Kecepatan" value={bySubtype.speed_change.length} icon={<Speed />} color={SUBTYPE_COLOR.speed_change} />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              <KpiCard title="Perubahan Arah" value={bySubtype.course_change.length} icon={<Explore />} color={SUBTYPE_COLOR.course_change} />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              <KpiCard title="Heading vs COG" value={bySubtype.heading_cog_mismatch.length} icon={<CompareArrows />} color={SUBTYPE_COLOR.heading_cog_mismatch} />
-            </Grid>
-          </Grid>
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+            <KpiCard title="Perubahan Kecepatan" value={bySubtype.speed_change.length} icon={<Gauge size={22} />} color={SUBTYPE_COLOR.speed_change} />
+            <KpiCard title="Perubahan Arah" value={bySubtype.course_change.length} icon={<Compass size={22} />} color={SUBTYPE_COLOR.course_change} />
+            <KpiCard title="Heading vs COG" value={bySubtype.heading_cog_mismatch.length} icon={<ArrowLeftRight size={22} />} color={SUBTYPE_COLOR.heading_cog_mismatch} />
+          </div>
 
           <BarChartCard title={`Distribusi Sub-jenis (n=${items.length})`} data={chartData} color="#4e79a7" height={240} />
 
-          <Paper sx={{ backgroundColor: THEME_COLORS.surface, border: `1px solid ${THEME_COLORS.border}`, borderRadius: 2, overflow: "hidden" }} elevation={0}>
-            <Box sx={{ px: 2.5, py: 1.5, borderBottom: `1px solid ${THEME_COLORS.border}` }}>
-              <Typography sx={{ fontSize: 14, fontWeight: 600, color: THEME_COLORS.text }}>Top 30 Skor Tertinggi</Typography>
-            </Box>
+          <div className="card overflow-hidden border border-base-300 bg-base-100">
+            <div className="border-b border-base-300 px-2.5 py-1.5">
+              <p className="text-sm font-semibold text-base-content">Top 30 Skor Tertinggi</p>
+            </div>
             {top30.length === 0 ? (
-              <Box sx={{ p: 3, textAlign: "center" }}>
-                <Typography sx={{ fontSize: 13, color: THEME_COLORS.textSecondary }}>
+              <div className="p-3 text-center">
+                <p className="text-[13px] text-base-content/60">
                   Tidak ada kejadian anomali kinematik pada window terakhir.
-                </Typography>
-              </Box>
+                </p>
+              </div>
             ) : (
-              <Box sx={{ overflowX: "auto" }}>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={headCellSx}>Sub-jenis</TableCell>
-                      <TableCell sx={headCellSx}>MMSI</TableCell>
-                      <TableCell sx={headCellSx}>Kapal</TableCell>
-                      <TableCell sx={headCellSx}>Waktu</TableCell>
-                      <TableCell sx={headCellSx}>Detail</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
+              <div className="overflow-x-auto">
+                <table className="table table-sm">
+                  <thead>
+                    <tr>
+                      <th className="bg-base-100 text-[11px] font-semibold tracking-wide text-base-content/60 uppercase">Sub-jenis</th>
+                      <th className="bg-base-100 text-[11px] font-semibold tracking-wide text-base-content/60 uppercase">MMSI</th>
+                      <th className="bg-base-100 text-[11px] font-semibold tracking-wide text-base-content/60 uppercase">Kapal</th>
+                      <th className="bg-base-100 text-[11px] font-semibold tracking-wide text-base-content/60 uppercase">Waktu</th>
+                      <th className="bg-base-100 text-[11px] font-semibold tracking-wide text-base-content/60 uppercase">Detail</th>
+                    </tr>
+                  </thead>
+                  <tbody>
                     {top30.map((r) => (
-                      <TableRow key={r.id} hover sx={{ "&:hover": { backgroundColor: `${THEME_COLORS.surfaceLight} !important` } }}>
-                        <TableCell sx={cellSx}><SubtypeChip subtype={String(r.evidence.subtype)} /></TableCell>
-                        <TableCell sx={{ ...cellSx, fontFamily: "monospace", color: THEME_COLORS.textSecondary }}>{r.mmsi}</TableCell>
-                        <TableCell sx={cellSx}>{r.vessel_name || "—"}</TableCell>
-                        <TableCell sx={cellSx}>{new Date(r.t_start).toLocaleString("id-ID")}</TableCell>
-                        <TableCell sx={{ ...cellSx, fontFamily: "monospace", fontSize: 12 }}>{evidenceDetail(r)}</TableCell>
-                      </TableRow>
+                      <tr key={r.id} className="hover:bg-base-200">
+                        <td><SubtypeChip subtype={String(r.evidence.subtype)} /></td>
+                        <td className="font-mono text-base-content/60">{r.mmsi}</td>
+                        <td>{r.vessel_name || "—"}</td>
+                        <td>{new Date(r.t_start).toLocaleString("id-ID")}</td>
+                        <td className="font-mono text-xs">{evidenceDetail(r)}</td>
+                      </tr>
                     ))}
-                  </TableBody>
-                </Table>
-              </Box>
+                  </tbody>
+                </table>
+              </div>
             )}
-          </Paper>
+          </div>
 
-          <Typography sx={{ fontSize: 11.5, color: THEME_COLORS.textSecondary }}>
+          <p className="text-[11.5px] text-base-content/60">
             Live · {formatNumber(items.length)} kejadian tersimpan di <code>anomaly_events</code> (tipe KINEMATIC_SCA)
-          </Typography>
-        </Box>
+          </p>
+        </div>
       )}
-    </Box>
+    </div>
   );
 }

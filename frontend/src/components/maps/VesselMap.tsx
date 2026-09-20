@@ -10,9 +10,7 @@ import {
   GeoJSON,
 } from "react-leaflet";
 import L from "leaflet";
-import { Box, CircularProgress, Typography, Chip, Alert, Button } from "@mui/material";
 import api from "../../api/client";
-import { THEME_COLORS } from "../../utils/constants";
 import type { GeoJSONCollection } from "../../types";
 
 const INDONESIA_CENTER: [number, number] = [-2.5, 118];
@@ -299,87 +297,55 @@ export default function VesselMap() {
 
   if (loading) {
     return (
-      <Box
-        sx={{
-          height: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexDirection: "column",
-          gap: 2,
-        }}
-      >
-        <CircularProgress sx={{ color: THEME_COLORS.secondary }} />
-        <Typography sx={{ color: THEME_COLORS.textSecondary, fontSize: 13 }}>
-          Memuat data peta…
-        </Typography>
-      </Box>
+      <div className="flex h-full flex-col items-center justify-center gap-3">
+        <span className="loading loading-spinner loading-lg text-secondary" />
+        <p className="text-sm text-base-content/60">Memuat data peta…</p>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Box sx={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", p: 3 }}>
-        <Alert severity="error" action={<Button color="inherit" size="small" onClick={load}>Coba Lagi</Button>}>
-          {error}
-        </Alert>
-      </Box>
+      <div className="flex h-full items-center justify-center p-6">
+        <div className="alert alert-error max-w-md">
+          <span>{error}</span>
+          <button className="btn btn-ghost btn-sm" onClick={load}>Coba Lagi</button>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ position: "relative", width: "100%", height: "100%" }}>
+    <div className="relative h-full w-full">
       {/* Legend */}
-      <Box
-        sx={{
-          position: "absolute",
-          bottom: 30,
-          right: 10,
-          zIndex: 1000,
-          backgroundColor: "rgba(15,27,45,0.9)",
-          border: `1px solid ${THEME_COLORS.border}`,
-          borderRadius: 1.5,
-          p: 1.5,
-          minWidth: 140,
-        }}
-      >
-        <Typography sx={{ fontSize: 11, color: THEME_COLORS.textSecondary, mb: 1, fontWeight: 600 }}>
-          TIPE KAPAL
-        </Typography>
+      <div className="absolute right-2.5 bottom-7 z-[1000] min-w-[140px] rounded-lg border border-white/10 bg-[rgba(15,27,45,0.9)] p-3">
+        <p className="mb-2 text-[11px] font-semibold text-white/70">TIPE KAPAL</p>
         {Object.entries(SHIP_TYPE_COLORS)
           .filter(([k]) => !["Not available", "Military", "Pleasure"].includes(k))
           .map(([label, color]) => (
-            <Box key={label} sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
-              <Box sx={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: color, flexShrink: 0 }} />
-              <Typography sx={{ fontSize: 11, color: THEME_COLORS.text }}>{label}</Typography>
-            </Box>
+            <div key={label} className="mb-1 flex items-center gap-2">
+              <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+              <span className="text-[11px] text-white">{label}</span>
+            </div>
           ))}
-        <Box sx={{ mt: 1.5, pt: 1, borderTop: `1px solid ${THEME_COLORS.border}` }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
-            <Box sx={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: "#42a5f5", flexShrink: 0 }} />
-            <Typography sx={{ fontSize: 11, color: THEME_COLORS.text }}>Stasiun</Typography>
-          </Box>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Box sx={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: "#66bb6a", flexShrink: 0 }} />
-            <Typography sx={{ fontSize: 11, color: THEME_COLORS.text }}>AtoN</Typography>
-          </Box>
-        </Box>
-      </Box>
+        <div className="mt-3 border-t border-white/10 pt-2">
+          <div className="mb-1 flex items-center gap-2">
+            <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#42a5f5]" />
+            <span className="text-[11px] text-white">Stasiun</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#66bb6a]" />
+            <span className="text-[11px] text-white">AtoN</span>
+          </div>
+        </div>
+      </div>
 
       {/* Vessel count badge */}
-      <Box sx={{ position: "absolute", top: 10, left: 10, zIndex: 1000 }}>
-        <Chip
-          label={`${vesselFeatures.length.toLocaleString()} kapal`}
-          size="small"
-          sx={{
-            backgroundColor: "rgba(15,27,45,0.9)",
-            color: THEME_COLORS.secondary,
-            border: `1px solid ${THEME_COLORS.border}`,
-            fontSize: 12,
-            fontWeight: 600,
-          }}
-        />
-      </Box>
+      <div className="absolute top-2.5 left-2.5 z-[1000]">
+        <span className="badge border border-white/10 bg-[rgba(15,27,45,0.9)] font-semibold text-secondary">
+          {vesselFeatures.length.toLocaleString()} kapal
+        </span>
+      </div>
 
       <MapContainer
         center={INDONESIA_CENTER}
@@ -453,6 +419,6 @@ export default function VesselMap() {
           </LayersControl.Overlay>
         </LayersControl>
       </MapContainer>
-    </Box>
+    </div>
   );
 }

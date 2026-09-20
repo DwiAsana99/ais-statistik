@@ -1,53 +1,42 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import {
-  Drawer,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Box,
-  Typography,
-  IconButton,
-} from "@mui/material";
-import {
-  Dashboard as DashboardIcon,
-  DirectionsBoat,
+  LayoutDashboard,
+  Ship,
   TrendingUp,
   Map as MapIcon,
-  Assessment,
-  Sync,
+  BarChart3,
+  RefreshCw,
   ChevronLeft,
   ChevronRight,
-  Message,
+  MessageSquare,
   Router,
-  VerifiedUser,
-  Psychology,
-  CalendarMonth,
-  Settings,
-  Rule,
-  Anchor,
-  Speed,
+  ShieldCheck,
   Route,
-} from "@mui/icons-material";
-import { SIDEBAR_WIDTH, SIDEBAR_COLLAPSED_WIDTH, NAV_GROUPS, THEME_COLORS } from "../../utils/constants";
+  Anchor,
+  Gauge,
+  ListChecks,
+  CalendarDays,
+  Settings,
+  type LucideIcon,
+} from "lucide-react";
+import { SIDEBAR_WIDTH, SIDEBAR_COLLAPSED_WIDTH, NAV_GROUPS } from "../../utils/constants";
 
-const ICONS: Record<string, React.ReactElement> = {
-  Dashboard: <DashboardIcon />,
-  DirectionsBoat: <DirectionsBoat />,
-  TrendingUp: <TrendingUp />,
-  Map: <MapIcon />,
-  Assessment: <Assessment />,
-  Sync: <Sync />,
-  Message: <Message />,
-  Router: <Router />,
-  VerifiedUser: <VerifiedUser />,
-  Psychology: <Psychology />,
-  CalendarMonth: <CalendarMonth />,
-  Settings: <Settings />,
-  Rule: <Rule />,
-  Anchor: <Anchor />,
-  Speed: <Speed />,
-  Route: <Route />,
+const ICONS: Record<string, LucideIcon> = {
+  Dashboard: LayoutDashboard,
+  DirectionsBoat: Ship,
+  TrendingUp: TrendingUp,
+  Map: MapIcon,
+  Assessment: BarChart3,
+  Sync: RefreshCw,
+  Message: MessageSquare,
+  Router: Router,
+  VerifiedUser: ShieldCheck,
+  Route: Route,
+  Anchor: Anchor,
+  Speed: Gauge,
+  Rule: ListChecks,
+  CalendarMonth: CalendarDays,
+  Settings: Settings,
 };
 
 interface SidebarProps {
@@ -69,141 +58,81 @@ export default function Sidebar({ open, onToggle, mobile = false, onClose }: Sid
     if (mobile && onClose) onClose();
   };
 
-  return (
-    <Drawer
-      variant={mobile ? "temporary" : "permanent"}
-      open={mobile ? open : true}
-      onClose={onClose}
-      ModalProps={{ keepMounted: true }}
-      sx={{
-        width: mobile ? 0 : width,
-        flexShrink: 0,
-        "& .MuiDrawer-paper": {
-          width: mobile ? SIDEBAR_WIDTH : width,
-          transition: "width 0.2s ease",
-          overflowX: "hidden",
-          backgroundColor: THEME_COLORS.background,
-          borderRight: `1px solid ${THEME_COLORS.border}`,
-          color: THEME_COLORS.text,
-        },
-      }}
+  const panel = (
+    <nav
+      className="flex h-full flex-col overflow-hidden border-r border-base-300 bg-base-100 transition-[width] duration-200 ease-in-out"
+      style={{ width: mobile ? SIDEBAR_WIDTH : width }}
     >
-      <Box
-        sx={{
-          height: 64,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: expanded ? "space-between" : "center",
-          px: expanded ? 2 : 0,
-          borderBottom: `1px solid ${THEME_COLORS.border}`,
-        }}
+      <div
+        className={`flex h-16 shrink-0 items-center border-b border-base-300 ${expanded ? "justify-between px-4" : "justify-center"}`}
       >
         {expanded && (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Box
-              sx={{
-                width: 32,
-                height: 32,
-                borderRadius: "50%",
-                backgroundColor: THEME_COLORS.secondary,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontWeight: 700,
-                fontSize: 14,
-                color: "#fff",
-              }}
-            >
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-sm font-bold text-secondary-content">
               U
-            </Box>
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
-                UVMS
-              </Typography>
-              <Typography variant="caption" sx={{ color: THEME_COLORS.textSecondary, fontSize: 10 }}>
-                Modul Statistik AIS
-              </Typography>
-            </Box>
-          </Box>
+            </div>
+            <div>
+              <p className="text-sm font-bold leading-tight text-base-content">UVMS</p>
+              <p className="text-[10px] text-base-content/60">Modul Statistik AIS</p>
+            </div>
+          </div>
         )}
         {!mobile && (
-          <IconButton onClick={onToggle} size="small" sx={{ color: THEME_COLORS.textSecondary }}>
-            {open ? <ChevronLeft /> : <ChevronRight />}
-          </IconButton>
+          <button onClick={onToggle} className="btn btn-ghost btn-square btn-sm text-base-content/60">
+            {open ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+          </button>
         )}
-      </Box>
+      </div>
 
-      <List sx={{ pt: 1 }}>
+      <ul className="menu w-full flex-1 flex-nowrap gap-0.5 overflow-y-auto overflow-x-hidden px-2 pt-2">
         {NAV_GROUPS.map((group, gi) => (
-          <Box key={gi}>
+          <li key={gi} className="w-full">
             {group.groupLabel && expanded && (
-              <Typography
-                sx={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: THEME_COLORS.textSecondary,
-                  letterSpacing: 1,
-                  px: 2,
-                  pt: gi === 0 ? 1 : 2,
-                  pb: 0.5,
-                  opacity: 0.7,
-                }}
-              >
+              <span className={`px-2 text-[10px] font-bold tracking-wider text-base-content/50 ${gi === 0 ? "pt-1" : "pt-2"} pb-0.5`}>
                 {group.groupLabel}
-              </Typography>
+              </span>
             )}
-            {group.items.map((item) => {
-              const isActive = !item.disabled && location.pathname === item.path;
-              return (
-                <ListItemButton
-                  key={item.path}
-                  disabled={item.disabled}
-                  onClick={() => !item.disabled && handleNavigate(item.path)}
-                  sx={{
-                    mx: 1,
-                    mb: 0.5,
-                    borderRadius: 1,
-                    minHeight: 40,
-                    justifyContent: expanded ? "initial" : "center",
-                    backgroundColor: isActive ? THEME_COLORS.surfaceLight : "transparent",
-                    borderLeft: isActive ? `3px solid ${THEME_COLORS.secondary}` : "3px solid transparent",
-                    opacity: item.disabled ? 0.4 : 1,
-                    "&:hover": {
-                      backgroundColor: item.disabled ? "transparent" : THEME_COLORS.surfaceLight,
-                    },
-                    "&.Mui-disabled": { opacity: 0.4 },
-                  }}
-                >
-                  <ListItemIcon
-                    sx={{
-                      minWidth: 0,
-                      mr: expanded ? 2 : 0,
-                      justifyContent: "center",
-                      color: isActive ? THEME_COLORS.secondary : THEME_COLORS.textSecondary,
-                    }}
-                  >
-                    {ICONS[item.icon]}
-                  </ListItemIcon>
-                  {expanded && (
-                    <ListItemText
-                      primary={item.label}
-                      slotProps={{
-                        primary: {
-                          sx: {
-                            fontSize: 13,
-                            fontWeight: isActive ? 600 : 400,
-                            color: isActive ? THEME_COLORS.text : THEME_COLORS.textSecondary,
-                          },
-                        },
-                      }}
-                    />
-                  )}
-                </ListItemButton>
-              );
-            })}
-          </Box>
+            <ul className="w-full">
+              {group.items.map((item) => {
+                const Icon = ICONS[item.icon];
+                const isActive = !item.disabled && location.pathname === item.path;
+                return (
+                  <li key={item.path} className="w-full">
+                    <button
+                      disabled={item.disabled}
+                      onClick={() => !item.disabled && handleNavigate(item.path)}
+                      title={!expanded ? item.label : undefined}
+                      className={`flex w-full items-center gap-3 rounded-lg py-2 text-[13px] transition-colors ${expanded ? "justify-start px-3" : "justify-center px-0"} ${
+                        isActive
+                          ? "border-l-[3px] border-secondary bg-base-200 font-semibold text-base-content"
+                          : "border-l-[3px] border-transparent text-base-content/60 hover:bg-base-200 disabled:opacity-40 disabled:hover:bg-transparent"
+                      }`}
+                    >
+                      <Icon size={19} className={isActive ? "text-secondary" : "text-base-content/60"} />
+                      {expanded && <span className="truncate">{item.label}</span>}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </li>
         ))}
-      </List>
-    </Drawer>
+      </ul>
+    </nav>
   );
+
+  if (mobile) {
+    return (
+      <>
+        {open && <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose} />}
+        <div
+          className={`fixed inset-y-0 left-0 z-50 transition-transform duration-200 ease-in-out ${open ? "translate-x-0" : "-translate-x-full"}`}
+        >
+          {panel}
+        </div>
+      </>
+    );
+  }
+
+  return <div className="fixed inset-y-0 left-0 z-30">{panel}</div>;
 }

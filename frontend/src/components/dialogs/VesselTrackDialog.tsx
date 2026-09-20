@@ -1,6 +1,5 @@
-import { Dialog, DialogTitle, DialogContent, Box, Typography, IconButton } from "@mui/material";
-import { Close, Route } from "@mui/icons-material";
-import { THEME_COLORS } from "../../utils/constants";
+import { useEffect, useRef } from "react";
+import { X, Route } from "lucide-react";
 import VesselTrackViewer from "../vessel/VesselTrackViewer";
 import type { VesselListItem } from "../../types";
 
@@ -11,38 +10,42 @@ interface Props {
 }
 
 export default function VesselTrackDialog({ vessel, open, onClose }: Props) {
-  return (
-    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
-      <DialogTitle
-        sx={{
-          backgroundColor: THEME_COLORS.surface,
-          color: THEME_COLORS.text,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          py: 1.5,
-          borderBottom: `1px solid ${THEME_COLORS.border}`,
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Route sx={{ color: THEME_COLORS.secondary }} />
-          <Box>
-            <Typography sx={{ fontWeight: 700, fontSize: 15, color: THEME_COLORS.text }}>
-              {vessel?.name || `MMSI ${vessel?.mmsi}`}
-            </Typography>
-            <Typography sx={{ fontSize: 11, color: THEME_COLORS.textSecondary }}>
-              Track History · MMSI {vessel?.mmsi}{vessel?.ship_type_group ? ` · ${vessel.ship_type_group}` : ""}
-            </Typography>
-          </Box>
-        </Box>
-        <IconButton onClick={onClose} size="small" sx={{ color: THEME_COLORS.textSecondary }}>
-          <Close fontSize="small" />
-        </IconButton>
-      </DialogTitle>
+  const ref = useRef<HTMLDialogElement>(null);
 
-      <DialogContent sx={{ backgroundColor: THEME_COLORS.background, p: 0 }}>
-        {vessel && <VesselTrackViewer key={vessel.mmsi} vessel={vessel} />}
-      </DialogContent>
-    </Dialog>
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (open && !el.open) el.showModal();
+    if (!open && el.open) el.close();
+  }, [open]);
+
+  return (
+    <dialog ref={ref} className="modal" onCancel={onClose}>
+      <div className="modal-box max-w-4xl p-0">
+        <div className="flex items-center justify-between border-b border-base-300 bg-base-100 px-4 py-3">
+          <div className="flex items-center gap-2.5">
+            <Route className="text-secondary" size={20} />
+            <div>
+              <p className="text-[15px] font-bold text-base-content">
+                {vessel?.name || `MMSI ${vessel?.mmsi}`}
+              </p>
+              <p className="text-[11px] text-base-content/60">
+                Track History · MMSI {vessel?.mmsi}{vessel?.ship_type_group ? ` · ${vessel.ship_type_group}` : ""}
+              </p>
+            </div>
+          </div>
+          <button className="btn btn-ghost btn-square btn-sm text-base-content/60" onClick={onClose}>
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="bg-base-100">
+          {vessel && <VesselTrackViewer key={vessel.mmsi} vessel={vessel} />}
+        </div>
+      </div>
+      <form method="dialog" className="modal-backdrop">
+        <button onClick={onClose}>close</button>
+      </form>
+    </dialog>
   );
 }

@@ -1,14 +1,13 @@
 import { useEffect, useState, useCallback } from "react";
-import { Grid, Box, CircularProgress, Alert, Button } from "@mui/material";
 import {
-  DirectionsBoat,
+  Ship,
   Navigation,
   Anchor,
-  LocalParking,
-  Message,
+  ParkingCircle,
+  MessageSquare,
   Router,
-  ErrorOutlined,
-} from "@mui/icons-material";
+  CircleAlert,
+} from "lucide-react";
 import KpiCard from "../components/cards/KpiCard";
 import DonutChart from "../components/charts/DonutChart";
 import api from "../api/client";
@@ -47,17 +46,18 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", pt: 10 }}>
-        <CircularProgress sx={{ color: "#D4930A" }} />
-      </Box>
+      <div className="flex justify-center pt-10">
+        <span className="loading loading-spinner text-secondary" />
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Alert severity="error" action={<Button color="inherit" size="small" onClick={load}>Coba Lagi</Button>}>
-        {error}
-      </Alert>
+      <div className="alert alert-error">
+        <span>{error}</span>
+        <button className="btn btn-ghost btn-sm" onClick={load}>Coba Lagi</button>
+      </div>
     );
   }
 
@@ -65,90 +65,70 @@ export default function DashboardPage() {
   const isHealthy = errorRate <= 5;
 
   return (
-    <Box>
+    <div>
       {/* Vessel status KPIs */}
-      <Grid container spacing={2.5} sx={{ mb: 2 }}>
-        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-          <KpiCard
-            title="Total Kapal"
-            value={overview?.total_vessels ?? 0}
-            icon={<DirectionsBoat />}
-            color="#4e79a7"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-          <KpiCard
-            title="Kapal Aktif"
-            value={overview?.active_vessels ?? 0}
-            icon={<Navigation />}
-            color="#59a14f"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-          <KpiCard
-            title="Berlayar"
-            value={overview?.vessels_underway ?? 0}
-            icon={<Navigation />}
-            color="#D4930A"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-          <KpiCard
-            title="Berlabuh"
-            value={overview?.vessels_anchored ?? 0}
-            icon={<Anchor />}
-            color="#f28e2b"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-          <KpiCard
-            title="Sandar"
-            value={overview?.vessels_moored ?? 0}
-            icon={<LocalParking />}
-            color="#76b7b2"
-          />
-        </Grid>
-      </Grid>
+      <div className="mb-2 grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+        <KpiCard
+          title="Total Kapal"
+          value={overview?.total_vessels ?? 0}
+          icon={<Ship size={22} />}
+          color="#4e79a7"
+        />
+        <KpiCard
+          title="Kapal Aktif"
+          value={overview?.active_vessels ?? 0}
+          icon={<Navigation size={22} />}
+          color="#59a14f"
+        />
+        <KpiCard
+          title="Berlayar"
+          value={overview?.vessels_underway ?? 0}
+          icon={<Navigation size={22} />}
+          color="#D4930A"
+        />
+        <KpiCard
+          title="Berlabuh"
+          value={overview?.vessels_anchored ?? 0}
+          icon={<Anchor size={22} />}
+          color="#f28e2b"
+        />
+        <KpiCard
+          title="Sandar"
+          value={overview?.vessels_moored ?? 0}
+          icon={<ParkingCircle size={22} />}
+          color="#76b7b2"
+        />
+      </div>
 
       {/* System health KPIs */}
-      <Grid container spacing={2.5} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <KpiCard
-            title="Pesan Diterima Hari Ini"
-            value={overview?.messages_today ?? 0}
-            icon={<Message />}
-            color="#76b7b2"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <KpiCard
-            title="Stasiun Online"
-            value={overview?.stations_online ?? 0}
-            icon={<Router />}
-            color="#59a14f"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <KpiCard
-            title="Error Rate"
-            value={errorRate}
-            valueText={`${errorRate.toFixed(1)}%`}
-            icon={<ErrorOutlined />}
-            color={isHealthy ? "#59a14f" : "#e15759"}
-            statusLabel={isHealthy ? "Sehat" : "Degraded"}
-            statusColor={isHealthy ? "#59a14f" : "#e15759"}
-          />
-        </Grid>
-      </Grid>
+      <div className="mb-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3">
+        <KpiCard
+          title="Pesan Diterima Hari Ini"
+          value={overview?.messages_today ?? 0}
+          icon={<MessageSquare size={22} />}
+          color="#76b7b2"
+        />
+        <KpiCard
+          title="Stasiun Online"
+          value={overview?.stations_online ?? 0}
+          icon={<Router size={22} />}
+          color="#59a14f"
+        />
+        <KpiCard
+          title="Error Rate"
+          value={errorRate}
+          valueText={`${errorRate.toFixed(1)}%`}
+          icon={<CircleAlert size={22} />}
+          color={isHealthy ? "#59a14f" : "#e15759"}
+          statusLabel={isHealthy ? "Sehat" : "Degraded"}
+          statusColor={isHealthy ? "#59a14f" : "#e15759"}
+        />
+      </div>
 
-      <Grid container spacing={2.5}>
-        <Grid size={{ xs: 12, md: 6 }}>
-          {shipTypeDist && <DonutChart title={shipTypeDist.title} data={shipTypeDist.data} />}
-        </Grid>
-        <Grid size={{ xs: 12, md: 6 }}>
-          {navStatusDist && <DonutChart title={navStatusDist.title} data={navStatusDist.data} />}
-        </Grid>
-      </Grid>
-    </Box>
+      <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
+        <div>{shipTypeDist && <DonutChart title={shipTypeDist.title} data={shipTypeDist.data} />}</div>
+        <div>{navStatusDist && <DonutChart title={navStatusDist.title} data={navStatusDist.data} />}</div>
+      </div>
+    </div>
   );
 }

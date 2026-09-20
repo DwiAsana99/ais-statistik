@@ -61,33 +61,7 @@ export const HEADER_HEIGHT = 64;
 
 export type ThemeMode = "dark" | "light";
 
-export const DARK_COLORS = {
-  primary: "#1A4E8F",
-  secondary: "#D4930A",
-  background: "#0F1B2D",
-  surface: "#152238",
-  surfaceLight: "#1C2E4A",
-  text: "#E8ECF1",
-  textSecondary: "#8899AA",
-  border: "#2A3F5F",
-};
-
-export const LIGHT_COLORS = {
-  primary: "#1A4E8F",
-  secondary: "#B8790A",
-  background: "#F2F5F9",
-  surface: "#FFFFFF",
-  surfaceLight: "#EAEFF5",
-  text: "#1A2433",
-  textSecondary: "#5B6B82",
-  border: "#DCE3ED",
-};
-
-// Mutable singleton — components read THEME_COLORS.x at render time.
-// applyThemeColors() mutates it in place; the Outlet remount (MainLayout, key={mode})
-// forces page subtrees to re-render and pick up the new values.
-export const THEME_COLORS = { ...DARK_COLORS };
-
-export function applyThemeColors(mode: ThemeMode) {
-  Object.assign(THEME_COLORS, mode === "light" ? LIGHT_COLORS : DARK_COLORS);
-}
+// Colors now live in src/index.css as DaisyUI CSS-variable themes ("maritime" /
+// "maritime-dark"), applied via the `data-theme` attribute (see stores/themeStore.ts).
+// Components use Tailwind/DaisyUI utility classes (bg-base-100, text-base-content, etc.)
+// instead of reading a JS color object.

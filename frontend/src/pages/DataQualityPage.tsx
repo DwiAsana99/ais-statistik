@@ -1,16 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
-import {
-  Box, Typography, CircularProgress, Alert, Button, Paper, Chip,
-  Table, TableBody, TableCell, TableHead, TableRow,
-} from "@mui/material";
-import { Grid } from "@mui/material";
-import { VerifiedUser, BugReport, ContentCopy, Block } from "@mui/icons-material";
+import { ShieldCheck, Bug, Copy, Ban } from "lucide-react";
 import KpiCard from "../components/cards/KpiCard";
 import DonutChart from "../components/charts/DonutChart";
 import LineChartCard from "../components/charts/LineChartCard";
 import api from "../api/client";
 import type { QualitySummary, QualityByStation, DistributionResponse, TrendResponse } from "../types";
-import { THEME_COLORS } from "../utils/constants";
 import { formatNumber } from "../utils/formatters";
 
 const SEVERITY_COLOR: Record<string, string> = {
@@ -31,37 +25,16 @@ const STATUS_LABEL: Record<string, string> = {
   critical: "Kritis",
 };
 
-const cellSx = {
-  color: THEME_COLORS.text,
-  borderBottom: `1px solid ${THEME_COLORS.border}`,
-  fontSize: 13,
-  py: 1,
-};
-const headCellSx = {
-  ...cellSx,
-  fontWeight: 600,
-  color: THEME_COLORS.textSecondary,
-  fontSize: 11,
-  textTransform: "uppercase" as const,
-  letterSpacing: 0.5,
-  backgroundColor: THEME_COLORS.surface,
-};
-
 function SeverityChip({ severity }: { severity: string }) {
   const label = severity === "ok" ? "OK" : severity === "warning" ? "Warning" : "Kritis";
+  const color = SEVERITY_COLOR[severity] ?? "#8899AA";
   return (
-    <Chip
-      label={label}
-      size="small"
-      sx={{
-        backgroundColor: `${SEVERITY_COLOR[severity] ?? "#8899AA"}22`,
-        color: SEVERITY_COLOR[severity] ?? THEME_COLORS.textSecondary,
-        border: `1px solid ${SEVERITY_COLOR[severity] ?? "#8899AA"}55`,
-        fontWeight: 600,
-        fontSize: 11,
-        height: 22,
-      }}
-    />
+    <span
+      className="badge badge-sm h-[22px] border font-semibold"
+      style={{ backgroundColor: `${color}22`, color, borderColor: `${color}55` }}
+    >
+      {label}
+    </span>
   );
 }
 
@@ -108,213 +81,159 @@ export default function DataQualityPage() {
     load();
   }, [load]);
 
-  const statusColor = summary ? STATUS_COLOR[summary.status] : THEME_COLORS.textSecondary;
+  const statusColor = summary ? STATUS_COLOR[summary.status] : "#8899AA";
 
   return (
-    <Box>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
-        <Typography variant="h6" sx={{ color: THEME_COLORS.text, fontWeight: 600 }}>
-          Kualitas Data
-        </Typography>
+    <div>
+      <div className="mb-3 flex items-center gap-2">
+        <p className="text-lg font-semibold text-base-content">Kualitas Data</p>
         {summary && (
-          <Chip
-            label={STATUS_LABEL[summary.status]}
-            size="small"
-            sx={{
-              backgroundColor: `${statusColor}22`,
-              color: statusColor,
-              border: `1px solid ${statusColor}55`,
-              fontWeight: 700,
-              fontSize: 12,
-            }}
-          />
+          <span
+            className="badge badge-sm border font-bold"
+            style={{ backgroundColor: `${statusColor}22`, color: statusColor, borderColor: `${statusColor}55` }}
+          >
+            {STATUS_LABEL[summary.status]}
+          </span>
         )}
-      </Box>
+      </div>
 
       {error && (
-        <Alert
-          severity="error"
-          sx={{ mb: 2.5 }}
-          action={<Button color="inherit" size="small" onClick={load}>Coba Lagi</Button>}
-        >
-          {error}
-        </Alert>
+        <div className="alert alert-error mb-5">
+          <span>{error}</span>
+          <button className="btn btn-ghost btn-sm" onClick={load}>Coba Lagi</button>
+        </div>
       )}
 
       {loading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", pt: 10 }}>
-          <CircularProgress sx={{ color: THEME_COLORS.secondary }} />
-        </Box>
+        <div className="flex justify-center pt-16">
+          <span className="loading loading-spinner text-secondary" />
+        </div>
       ) : !error && (
-        <Grid container spacing={2.5}>
+        <div className="grid grid-cols-12 gap-5">
           {/* KPI cards */}
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <div className="col-span-12 sm:col-span-6 md:col-span-3">
             <KpiCard
               title="Error Rate Global"
               value={summary?.error_rate_pct ?? 0}
               valueText={summary ? `${summary.error_rate_pct.toFixed(3)}%` : "—"}
-              icon={<VerifiedUser />}
+              icon={<ShieldCheck />}
               color={statusColor}
             />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          </div>
+          <div className="col-span-12 sm:col-span-6 md:col-span-3">
             <KpiCard
               title="Parse Gagal"
               value={summary?.parse_error_count ?? 0}
-              icon={<BugReport />}
+              icon={<Bug />}
               color="#e15759"
             />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          </div>
+          <div className="col-span-12 sm:col-span-6 md:col-span-3">
             <KpiCard
               title="Duplikat"
               value={summary?.duplicate_count ?? 0}
-              icon={<ContentCopy />}
+              icon={<Copy />}
               color="#f28e2b"
             />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          </div>
+          <div className="col-span-12 sm:col-span-6 md:col-span-3">
             <KpiCard
               title="MMSI Invalid"
               value={summary?.invalid_mmsi_count ?? 0}
-              icon={<Block />}
+              icon={<Ban />}
               color="#b07aa1"
             />
-          </Grid>
+          </div>
 
           {/* Context line */}
           {summary && (
-            <Grid size={{ xs: 12 }}>
-              <Paper
-                sx={{
-                  px: 2.5,
-                  py: 1.25,
-                  backgroundColor: THEME_COLORS.surface,
-                  border: `1px solid ${THEME_COLORS.border}`,
-                  borderRadius: 2,
-                  display: "flex",
-                  gap: 3,
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                }}
-                elevation={0}
-              >
-                <Typography sx={{ fontSize: 13, color: THEME_COLORS.textSecondary }}>Hari ini:</Typography>
-                <Typography sx={{ fontSize: 13, color: THEME_COLORS.text }}>
+            <div className="col-span-12">
+              <div className="flex flex-wrap items-center gap-3 rounded-lg border border-base-300 bg-base-200 px-5 py-2.5">
+                <span className="text-[13px] text-base-content/60">Hari ini:</span>
+                <span className="text-[13px] text-base-content">
                   <strong>{formatNumber(summary.total_errors)}</strong> error dari{" "}
                   <strong>{formatNumber(summary.total_messages)}</strong> pesan
-                </Typography>
-              </Paper>
-            </Grid>
+                </span>
+              </div>
+            </div>
           )}
 
           {/* Trend line + Donut */}
-          <Grid size={{ xs: 12, lg: 8 }}>
+          <div className="col-span-12 lg:col-span-8">
             {trend && <LineChartCard title={trend.title} data={trend.data} height={280} />}
-          </Grid>
-          <Grid size={{ xs: 12, lg: 4 }}>
+          </div>
+          <div className="col-span-12 lg:col-span-4">
             {byType && byType.data.length > 0 && (
               <DonutChart title={byType.title} data={byType.data} height={240} />
             )}
-          </Grid>
+          </div>
 
           {/* By-station table */}
           {byStation.length > 0 && (
-            <Grid size={{ xs: 12 }}>
-              <Paper
-                sx={{
-                  backgroundColor: THEME_COLORS.surface,
-                  border: `1px solid ${THEME_COLORS.border}`,
-                  borderRadius: 2,
-                  overflow: "hidden",
-                }}
-                elevation={0}
-              >
-                <Box sx={{ px: 2.5, py: 1.5, borderBottom: `1px solid ${THEME_COLORS.border}` }}>
-                  <Typography sx={{ fontSize: 14, fontWeight: 600, color: THEME_COLORS.text }}>
+            <div className="col-span-12">
+              <div className="card overflow-hidden border border-base-300 bg-base-100">
+                <div className="border-b border-base-300 px-5 py-3">
+                  <p className="text-sm font-semibold text-base-content">
                     Error Rate per Stasiun (7 Hari)
-                  </Typography>
-                </Box>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={headCellSx}>#</TableCell>
-                      <TableCell sx={headCellSx}>Stasiun</TableCell>
-                      <TableCell sx={headCellSx}>Severity</TableCell>
-                      <TableCell sx={{ ...headCellSx, textAlign: "right" }}>Error</TableCell>
-                      <TableCell sx={{ ...headCellSx, textAlign: "right" }}>Total Pesan</TableCell>
-                      <TableCell sx={{ ...headCellSx, textAlign: "right" }}>Error Rate</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {byStation.map((s, i) => (
-                      <TableRow
-                        key={s.station_id}
-                        hover
-                        sx={{
-                          "&:hover": { backgroundColor: `${THEME_COLORS.surfaceLight} !important` },
-                          backgroundColor:
-                            s.severity === "critical"
-                              ? `${SEVERITY_COLOR.critical}0A`
-                              : s.severity === "warning"
-                              ? `${SEVERITY_COLOR.warning}0A`
-                              : "transparent",
-                        }}
-                      >
-                        <TableCell sx={{ ...cellSx, color: THEME_COLORS.textSecondary, width: 40 }}>
-                          {i + 1}
-                        </TableCell>
-                        <TableCell sx={{ ...cellSx, fontFamily: "monospace", fontWeight: 500 }}>
-                          {s.station_id}
-                        </TableCell>
-                        <TableCell sx={cellSx}>
-                          <SeverityChip severity={s.severity} />
-                        </TableCell>
-                        <TableCell sx={{ ...cellSx, textAlign: "right", fontFamily: "monospace" }}>
-                          {formatNumber(s.error_count)}
-                        </TableCell>
-                        <TableCell sx={{ ...cellSx, textAlign: "right", fontFamily: "monospace" }}>
-                          {formatNumber(s.total_count)}
-                        </TableCell>
-                        <TableCell
-                          sx={{
-                            ...cellSx,
-                            textAlign: "right",
-                            fontWeight: 700,
-                            color: SEVERITY_COLOR[s.severity] ?? THEME_COLORS.text,
-                            fontFamily: "monospace",
+                  </p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="table table-sm">
+                    <thead>
+                      <tr>
+                        <th className="w-10 bg-base-100 text-[11px] font-semibold tracking-wide text-base-content/60 uppercase">#</th>
+                        <th className="bg-base-100 text-[11px] font-semibold tracking-wide text-base-content/60 uppercase">Stasiun</th>
+                        <th className="bg-base-100 text-[11px] font-semibold tracking-wide text-base-content/60 uppercase">Severity</th>
+                        <th className="bg-base-100 text-right text-[11px] font-semibold tracking-wide text-base-content/60 uppercase">Error</th>
+                        <th className="bg-base-100 text-right text-[11px] font-semibold tracking-wide text-base-content/60 uppercase">Total Pesan</th>
+                        <th className="bg-base-100 text-right text-[11px] font-semibold tracking-wide text-base-content/60 uppercase">Error Rate</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {byStation.map((s, i) => (
+                        <tr
+                          key={s.station_id}
+                          className="hover:bg-base-200"
+                          style={{
+                            backgroundColor:
+                              s.severity === "critical"
+                                ? `${SEVERITY_COLOR.critical}0A`
+                                : s.severity === "warning"
+                                ? `${SEVERITY_COLOR.warning}0A`
+                                : "transparent",
                           }}
                         >
-                          {s.error_rate_pct.toFixed(3)}%
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </Paper>
-            </Grid>
+                          <td className="text-base-content/60">{i + 1}</td>
+                          <td className="font-mono font-medium">{s.station_id}</td>
+                          <td><SeverityChip severity={s.severity} /></td>
+                          <td className="text-right font-mono">{formatNumber(s.error_count)}</td>
+                          <td className="text-right font-mono">{formatNumber(s.total_count)}</td>
+                          <td
+                            className="text-right font-mono font-bold"
+                            style={{ color: SEVERITY_COLOR[s.severity] ?? undefined }}
+                          >
+                            {s.error_rate_pct.toFixed(3)}%
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           )}
 
           {byStation.length === 0 && !loading && (
-            <Grid size={{ xs: 12 }}>
-              <Paper
-                sx={{
-                  p: 3,
-                  backgroundColor: THEME_COLORS.surface,
-                  border: `1px solid ${THEME_COLORS.border}`,
-                  borderRadius: 2,
-                  textAlign: "center",
-                }}
-                elevation={0}
-              >
-                <Typography sx={{ fontSize: 13, color: THEME_COLORS.textSecondary }}>
+            <div className="col-span-12">
+              <div className="card border border-base-300 bg-base-100 p-6 text-center">
+                <p className="text-[13px] text-base-content/60">
                   Data per-stasiun tidak tersedia — kolom station_id mungkin tidak ada di tabel ais_errors.
-                </Typography>
-              </Paper>
-            </Grid>
+                </p>
+              </div>
+            </div>
           )}
-        </Grid>
+        </div>
       )}
-    </Box>
+    </div>
   );
 }

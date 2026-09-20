@@ -1,24 +1,7 @@
 import { useState } from "react";
 import { saveAs } from "file-saver";
-import {
-  Box,
-  Typography,
-  Paper,
-  TextField,
-  Button,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Grid,
-  ToggleButtonGroup,
-  ToggleButton,
-  CircularProgress,
-  Alert,
-} from "@mui/material";
-import { Download, TableChart, PictureAsPdf, GridOn } from "@mui/icons-material";
+import { Download, Table, FileSpreadsheet, FileText } from "lucide-react";
 import api from "../api/client";
-import { THEME_COLORS } from "../utils/constants";
 
 type ReportType = "vessels" | "encounters";
 type Format = "csv" | "excel" | "pdf";
@@ -78,162 +61,125 @@ export default function ReportsPage() {
   };
 
   return (
-    <Box>
-      <Typography variant="h6" sx={{ color: THEME_COLORS.text, fontWeight: 600, mb: 3 }}>
-        Laporan
-      </Typography>
+    <div>
+      <p className="mb-3 text-lg font-semibold text-base-content">Laporan</p>
 
-      <Paper
-        sx={{
-          p: 3,
-          backgroundColor: THEME_COLORS.surface,
-          border: `1px solid ${THEME_COLORS.border}`,
-          borderRadius: 2,
-          maxWidth: 640,
-        }}
-        elevation={0}
-      >
-        <Typography sx={{ fontSize: 12, color: THEME_COLORS.textSecondary, mb: 1, fontWeight: 600 }}>
-          JENIS LAPORAN
-        </Typography>
-        <ToggleButtonGroup
-          value={reportType}
-          exclusive
-          onChange={(_, v) => v && setReportType(v)}
-          size="small"
-          fullWidth
-          sx={{
-            mb: 3,
-            "& .MuiToggleButton-root": {
-              color: THEME_COLORS.textSecondary,
-              borderColor: THEME_COLORS.border,
-              textTransform: "none",
-              "&.Mui-selected": {
-                color: THEME_COLORS.secondary,
-                backgroundColor: `${THEME_COLORS.secondary}18`,
-              },
-            },
-          }}
-        >
-          <ToggleButton value="vessels">Daftar Kapal</ToggleButton>
-          <ToggleButton value="encounters">Pertemuan Kapal</ToggleButton>
-        </ToggleButtonGroup>
+      <div className="card max-w-[640px] border border-base-300 bg-base-100 p-6">
+        <p className="mb-1.5 text-xs font-semibold text-base-content/60">JENIS LAPORAN</p>
+        <div className="join mb-6 w-full">
+          <button
+            className={`btn join-item btn-sm flex-1 ${reportType === "vessels" ? "btn-secondary" : "btn-outline"}`}
+            onClick={() => setReportType("vessels")}
+          >
+            Daftar Kapal
+          </button>
+          <button
+            className={`btn join-item btn-sm flex-1 ${reportType === "encounters" ? "btn-secondary" : "btn-outline"}`}
+            onClick={() => setReportType("encounters")}
+          >
+            Pertemuan Kapal
+          </button>
+        </div>
 
         {reportType === "vessels" ? (
-          <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                size="small"
-                label="Cari nama / MMSI / call sign"
+          <div className="mb-6 grid grid-cols-12 gap-4">
+            <div className="col-span-12 sm:col-span-6">
+              <label className="mb-1 block text-xs text-base-content/60">Cari nama / MMSI / call sign</label>
+              <input
+                type="text"
+                className="input input-sm w-full"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                sx={{ "& .MuiInputBase-input": { color: THEME_COLORS.text, fontSize: 13 } }}
               />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel sx={{ color: THEME_COLORS.textSecondary, fontSize: 13 }}>Tipe Kapal</InputLabel>
-                <Select
-                  value={shipType}
-                  label="Tipe Kapal"
-                  onChange={(e) => setShipType(e.target.value)}
-                  sx={{ color: THEME_COLORS.text, fontSize: 13 }}
-                >
-                  <MenuItem value="">Semua</MenuItem>
-                  {SHIP_TYPES.map((t) => (
-                    <MenuItem key={t} value={t}>{t}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-          </Grid>
+            </div>
+            <div className="col-span-12 sm:col-span-6">
+              <label className="mb-1 block text-xs text-base-content/60">Tipe Kapal</label>
+              <select
+                className="select select-sm w-full"
+                value={shipType}
+                onChange={(e) => setShipType(e.target.value)}
+              >
+                <option value="">Semua</option>
+                {SHIP_TYPES.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+          </div>
         ) : (
-          <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                size="small"
+          <div className="mb-6 grid grid-cols-12 gap-4">
+            <div className="col-span-12 sm:col-span-6">
+              <label className="mb-1 block text-xs text-base-content/60">Dari</label>
+              <input
                 type="datetime-local"
-                label="Dari"
+                className="input input-sm w-full"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
-                sx={{ "& .MuiInputBase-input": { color: THEME_COLORS.text, fontSize: 13 } }}
               />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                size="small"
+            </div>
+            <div className="col-span-12 sm:col-span-6">
+              <label className="mb-1 block text-xs text-base-content/60">Sampai</label>
+              <input
                 type="datetime-local"
-                label="Sampai"
+                className="input input-sm w-full"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
-                sx={{ "& .MuiInputBase-input": { color: THEME_COLORS.text, fontSize: 13 } }}
               />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                size="small"
+            </div>
+            <div className="col-span-12 sm:col-span-6">
+              <label className="mb-1 block text-xs text-base-content/60">Jarak Maks (m)</label>
+              <input
                 type="number"
-                label="Jarak Maks (m)"
+                className="input input-sm w-full"
                 value={distanceM}
                 onChange={(e) => setDistanceM(Number(e.target.value))}
-                sx={{ "& .MuiInputBase-input": { color: THEME_COLORS.text, fontSize: 13 } }}
               />
-            </Grid>
-            <Grid size={{ xs: 12 }}>
-              <Typography sx={{ fontSize: 11, color: THEME_COLORS.textSecondary }}>
+            </div>
+            <div className="col-span-12">
+              <p className="text-[11px] text-base-content/60">
                 Rentang waktu dibatasi maks 24 jam untuk menjaga performa query.
-              </Typography>
-            </Grid>
-          </Grid>
+              </p>
+            </div>
+          </div>
         )}
 
-        <Typography sx={{ fontSize: 12, color: THEME_COLORS.textSecondary, mb: 1, fontWeight: 600 }}>
-          FORMAT
-        </Typography>
-        <ToggleButtonGroup
-          value={format}
-          exclusive
-          onChange={(_, v) => v && setFormat(v)}
-          size="small"
-          fullWidth
-          sx={{
-            mb: 3,
-            "& .MuiToggleButton-root": {
-              color: THEME_COLORS.textSecondary,
-              borderColor: THEME_COLORS.border,
-              textTransform: "none",
-              gap: 0.5,
-              "&.Mui-selected": {
-                color: THEME_COLORS.secondary,
-                backgroundColor: `${THEME_COLORS.secondary}18`,
-              },
-            },
-          }}
-        >
-          <ToggleButton value="csv"><TableChart fontSize="small" sx={{ mr: 0.5 }} /> CSV</ToggleButton>
-          <ToggleButton value="excel"><GridOn fontSize="small" sx={{ mr: 0.5 }} /> Excel</ToggleButton>
-          <ToggleButton value="pdf"><PictureAsPdf fontSize="small" sx={{ mr: 0.5 }} /> PDF</ToggleButton>
-        </ToggleButtonGroup>
+        <p className="mb-1.5 text-xs font-semibold text-base-content/60">FORMAT</p>
+        <div className="join mb-6 w-full">
+          <button
+            className={`btn join-item btn-sm flex-1 gap-1.5 ${format === "csv" ? "btn-secondary" : "btn-outline"}`}
+            onClick={() => setFormat("csv")}
+          >
+            <Table size={14} /> CSV
+          </button>
+          <button
+            className={`btn join-item btn-sm flex-1 gap-1.5 ${format === "excel" ? "btn-secondary" : "btn-outline"}`}
+            onClick={() => setFormat("excel")}
+          >
+            <FileSpreadsheet size={14} /> Excel
+          </button>
+          <button
+            className={`btn join-item btn-sm flex-1 gap-1.5 ${format === "pdf" ? "btn-secondary" : "btn-outline"}`}
+            onClick={() => setFormat("pdf")}
+          >
+            <FileText size={14} /> PDF
+          </button>
+        </div>
 
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {error && (
+          <div className="alert alert-error mb-4">
+            <span>{error}</span>
+          </div>
+        )}
 
-        <Button
-          fullWidth
-          variant="contained"
-          startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <Download />}
+        <button
+          className="btn btn-secondary w-full gap-2"
           onClick={handleExport}
           disabled={loading}
-          sx={{ backgroundColor: THEME_COLORS.secondary, "&:hover": { backgroundColor: "#b87d08" } }}
         >
+          {loading ? <span className="loading loading-spinner loading-sm" /> : <Download size={16} />}
           {loading ? "Mengekspor..." : "Export Laporan"}
-        </Button>
-      </Paper>
-    </Box>
+        </button>
+      </div>
+    </div>
   );
 }

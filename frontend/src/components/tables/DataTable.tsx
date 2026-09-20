@@ -1,30 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import {
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  TableSortLabel,
-  TextField,
-  InputAdornment,
-  Box,
-  Typography,
-  Chip,
-  CircularProgress,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  IconButton,
-  Tooltip,
-} from "@mui/material";
-import { Search, Route } from "@mui/icons-material";
+import { Search, Route, ChevronLeft, ChevronRight, ArrowUp, ArrowDown } from "lucide-react";
 import api from "../../api/client";
-import { THEME_COLORS } from "../../utils/constants";
 import { formatNumber, truncate } from "../../utils/formatters";
 import type { VesselListItem, PaginatedResponse } from "../../types";
 
@@ -49,22 +25,6 @@ interface DataTableProps {
   initialSearch?: string;
   onTrackView?: (vessel: VesselListItem) => void;
 }
-
-const cellSx = {
-  color: THEME_COLORS.text,
-  borderBottom: `1px solid ${THEME_COLORS.border}`,
-  fontSize: 13,
-  py: 1.2,
-};
-
-const headCellSx = {
-  ...cellSx,
-  fontWeight: 600,
-  color: THEME_COLORS.textSecondary,
-  fontSize: 12,
-  textTransform: "uppercase" as const,
-  letterSpacing: 0.5,
-};
 
 export default function DataTable({ initialSearch = "", onTrackView }: DataTableProps) {
   const [data, setData] = useState<PaginatedResponse<VesselListItem> | null>(null);
@@ -120,230 +80,159 @@ export default function DataTable({ initialSearch = "", onTrackView }: DataTable
     }
   };
 
-  return (
-    <Paper
-      sx={{
-        backgroundColor: THEME_COLORS.surface,
-        border: `1px solid ${THEME_COLORS.border}`,
-        borderRadius: 2,
-        overflow: "hidden",
-      }}
-      elevation={0}
-    >
-      <Box sx={{ p: 2, display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap" }}>
-        <TextField
-          size="small"
-          placeholder="Cari nama, MMSI, call sign..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search sx={{ color: THEME_COLORS.textSecondary, fontSize: 20 }} />
-                </InputAdornment>
-              ),
-            },
-          }}
-          sx={{
-            width: 300,
-            "& .MuiOutlinedInput-root": {
-              backgroundColor: THEME_COLORS.surfaceLight,
-              color: THEME_COLORS.text,
-              fontSize: 13,
-              "& fieldset": { borderColor: THEME_COLORS.border },
-              "&:hover fieldset": { borderColor: THEME_COLORS.textSecondary },
-            },
-          }}
-        />
-        <FormControl size="small" sx={{ minWidth: 160 }}>
-          <InputLabel sx={{ color: THEME_COLORS.textSecondary, fontSize: 13 }}>Tipe Kapal</InputLabel>
-          <Select
-            value={shipType}
-            onChange={(e) => setShipType(e.target.value)}
-            label="Tipe Kapal"
-            sx={{
-              backgroundColor: THEME_COLORS.surfaceLight,
-              color: THEME_COLORS.text,
-              fontSize: 13,
-              "& fieldset": { borderColor: THEME_COLORS.border },
-            }}
-          >
-            <MenuItem value="">Semua</MenuItem>
-            {SHIP_TYPES.map((t) => (
-              <MenuItem key={t} value={t}>{t}</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <Box sx={{ flexGrow: 1 }} />
-        {data && (
-          <Typography variant="caption" sx={{ color: THEME_COLORS.textSecondary }}>
-            {formatNumber(data.total)} kapal ditemukan
-          </Typography>
-        )}
-      </Box>
+  const sortTh = (field: SortField, label: string) => {
+    const active = sortBy === field;
+    return (
+      <th
+        className="cursor-pointer bg-base-100 text-[11px] font-semibold tracking-wide text-base-content/60 uppercase select-none"
+        onClick={() => handleSort(field)}
+      >
+        <span className="inline-flex items-center gap-1 whitespace-nowrap">
+          {label}
+          {active && (sortOrder === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />)}
+        </span>
+      </th>
+    );
+  };
 
-      <TableContainer sx={{ maxHeight: "calc(100vh - 380px)" }}>
-        <Table stickyHeader size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell sx={headCellSx}>
-                <TableSortLabel
-                  active={sortBy === "mmsi"}
-                  direction={sortBy === "mmsi" ? sortOrder : "asc"}
-                  onClick={() => handleSort("mmsi")}
-                  sx={{ color: `${THEME_COLORS.textSecondary} !important` }}
-                >
-                  MMSI
-                </TableSortLabel>
-              </TableCell>
-              <TableCell sx={headCellSx}>
-                <TableSortLabel
-                  active={sortBy === "name"}
-                  direction={sortBy === "name" ? sortOrder : "asc"}
-                  onClick={() => handleSort("name")}
-                  sx={{ color: `${THEME_COLORS.textSecondary} !important` }}
-                >
-                  Nama Kapal
-                </TableSortLabel>
-              </TableCell>
-              <TableCell sx={headCellSx}>Call Sign</TableCell>
-              <TableCell sx={headCellSx}>IMO</TableCell>
-              <TableCell sx={headCellSx}>
-                <TableSortLabel
-                  active={sortBy === "ship_type"}
-                  direction={sortBy === "ship_type" ? sortOrder : "asc"}
-                  onClick={() => handleSort("ship_type")}
-                  sx={{ color: `${THEME_COLORS.textSecondary} !important` }}
-                >
-                  Tipe
-                </TableSortLabel>
-              </TableCell>
-              <TableCell sx={headCellSx}>
-                <TableSortLabel
-                  active={sortBy === "length"}
-                  direction={sortBy === "length" ? sortOrder : "asc"}
-                  onClick={() => handleSort("length")}
-                  sx={{ color: `${THEME_COLORS.textSecondary} !important` }}
-                >
-                  LOA (m)
-                </TableSortLabel>
-              </TableCell>
-              <TableCell sx={headCellSx}>Lebar (m)</TableCell>
-              <TableCell sx={headCellSx}>Status</TableCell>
-              <TableCell sx={headCellSx}>SOG (kn)</TableCell>
-              <TableCell sx={headCellSx}>Tujuan</TableCell>
-              {onTrackView && <TableCell sx={{ ...headCellSx, width: 48 }} />}
-            </TableRow>
-          </TableHead>
-          <TableBody>
+  const total = data?.total ?? 0;
+  const rangeStart = total === 0 ? 0 : page * rowsPerPage + 1;
+  const rangeEnd = Math.min((page + 1) * rowsPerPage, total);
+  const colSpan = onTrackView ? 11 : 10;
+
+  return (
+    <div className="card overflow-hidden border border-base-300 bg-base-100">
+      <div className="flex flex-wrap items-center gap-3 p-4">
+        <label className="input input-sm w-[300px]">
+          <Search size={18} className="text-base-content/60" />
+          <input
+            type="text"
+            placeholder="Cari nama, MMSI, call sign..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </label>
+        <select
+          className="select select-sm w-40"
+          value={shipType}
+          onChange={(e) => setShipType(e.target.value)}
+        >
+          <option value="">Semua tipe</option>
+          {SHIP_TYPES.map((t) => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </select>
+        <div className="grow" />
+        {data && (
+          <span className="text-xs text-base-content/60">{formatNumber(data.total)} kapal ditemukan</span>
+        )}
+      </div>
+
+      <div className="max-h-[calc(100vh-380px)] overflow-auto">
+        <table className="table-pin-rows table table-sm">
+          <thead>
+            <tr>
+              {sortTh("mmsi", "MMSI")}
+              {sortTh("name", "Nama Kapal")}
+              <th className="bg-base-100 text-[11px] font-semibold tracking-wide text-base-content/60 uppercase">Call Sign</th>
+              <th className="bg-base-100 text-[11px] font-semibold tracking-wide text-base-content/60 uppercase">IMO</th>
+              {sortTh("ship_type", "Tipe")}
+              {sortTh("length", "LOA (m)")}
+              <th className="bg-base-100 text-[11px] font-semibold tracking-wide text-base-content/60 uppercase">Lebar (m)</th>
+              <th className="bg-base-100 text-[11px] font-semibold tracking-wide text-base-content/60 uppercase">Status</th>
+              <th className="bg-base-100 text-[11px] font-semibold tracking-wide text-base-content/60 uppercase">SOG (kn)</th>
+              <th className="bg-base-100 text-[11px] font-semibold tracking-wide text-base-content/60 uppercase">Tujuan</th>
+              {onTrackView && <th className="w-12 bg-base-100" />}
+            </tr>
+          </thead>
+          <tbody>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={onTrackView ? 11 : 10} sx={{ ...cellSx, textAlign: "center", py: 6 }}>
-                  <CircularProgress size={28} sx={{ color: THEME_COLORS.secondary }} />
-                </TableCell>
-              </TableRow>
+              <tr>
+                <td colSpan={colSpan} className="py-12 text-center">
+                  <span className="loading loading-spinner loading-md text-secondary" />
+                </td>
+              </tr>
             ) : data?.items.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={onTrackView ? 11 : 10} sx={{ ...cellSx, textAlign: "center", py: 4 }}>
-                  <Typography sx={{ color: THEME_COLORS.textSecondary }}>Tidak ada data</Typography>
-                </TableCell>
-              </TableRow>
+              <tr>
+                <td colSpan={colSpan} className="py-8 text-center text-base-content/60">Tidak ada data</td>
+              </tr>
             ) : (
               data?.items.map((v) => (
-                <TableRow
-                  key={v.mmsi}
-                  hover
-                  sx={{
-                    "&:hover": { backgroundColor: `${THEME_COLORS.surfaceLight} !important` },
-                    cursor: "default",
-                  }}
-                >
-                  <TableCell sx={cellSx}>
-                    <Typography sx={{ fontFamily: "monospace", fontSize: 13, color: THEME_COLORS.text }}>
-                      {v.mmsi}
-                    </Typography>
-                  </TableCell>
-                  <TableCell sx={{ ...cellSx, fontWeight: 500 }}>
-                    {v.name || "-"}
-                  </TableCell>
-                  <TableCell sx={cellSx}>{v.call_sign || "-"}</TableCell>
-                  <TableCell sx={cellSx}>{v.imo || "-"}</TableCell>
-                  <TableCell sx={cellSx}>
+                <tr key={v.mmsi} className="hover:bg-base-200">
+                  <td className="font-mono text-[13px]">{v.mmsi}</td>
+                  <td className="font-medium">{v.name || "-"}</td>
+                  <td>{v.call_sign || "-"}</td>
+                  <td>{v.imo || "-"}</td>
+                  <td>
                     {v.ship_type_group ? (
-                      <Chip
-                        label={v.ship_type_group}
-                        size="small"
-                        sx={{
-                          fontSize: 11,
-                          height: 22,
-                          backgroundColor: `${THEME_COLORS.primary}30`,
-                          color: THEME_COLORS.text,
-                        }}
-                      />
+                      <span className="badge badge-sm bg-primary/20 text-base-content">{v.ship_type_group}</span>
                     ) : "-"}
-                  </TableCell>
-                  <TableCell sx={cellSx}>{v.length_m ?? "-"}</TableCell>
-                  <TableCell sx={cellSx}>{v.width_m ?? "-"}</TableCell>
-                  <TableCell sx={cellSx}>
+                  </td>
+                  <td>{v.length_m ?? "-"}</td>
+                  <td>{v.width_m ?? "-"}</td>
+                  <td>
                     {v.last_nav_status ? (
-                      <Chip
-                        label={v.last_nav_status}
-                        size="small"
-                        sx={{
-                          fontSize: 11,
-                          height: 22,
+                      <span
+                        className="badge badge-sm border"
+                        style={{
                           backgroundColor: `${NAV_STATUS_COLORS[v.last_nav_status] || "#666"}25`,
-                          color: NAV_STATUS_COLORS[v.last_nav_status] || THEME_COLORS.textSecondary,
-                          border: `1px solid ${NAV_STATUS_COLORS[v.last_nav_status] || "#666"}40`,
+                          color: NAV_STATUS_COLORS[v.last_nav_status] || "var(--chart-muted)",
+                          borderColor: `${NAV_STATUS_COLORS[v.last_nav_status] || "#666"}40`,
                         }}
-                      />
+                      >
+                        {v.last_nav_status}
+                      </span>
                     ) : "-"}
-                  </TableCell>
-                  <TableCell sx={cellSx}>
-                    {v.last_sog != null ? v.last_sog.toFixed(1) : "-"}
-                  </TableCell>
-                  <TableCell sx={cellSx}>{truncate(v.destination, 20)}</TableCell>
+                  </td>
+                  <td>{v.last_sog != null ? v.last_sog.toFixed(1) : "-"}</td>
+                  <td>{truncate(v.destination, 20)}</td>
                   {onTrackView && (
-                    <TableCell sx={{ ...cellSx, p: 0.5 }}>
-                      <Tooltip title="Lihat Track">
-                        <IconButton
-                          size="small"
-                          onClick={(e) => { e.stopPropagation(); onTrackView(v); }}
-                          sx={{ color: THEME_COLORS.secondary, opacity: 0.7, "&:hover": { opacity: 1 } }}
-                        >
-                          <Route fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
+                    <td className="p-0.5">
+                      <button
+                        className="tooltip btn btn-ghost btn-square btn-xs text-secondary opacity-70 hover:opacity-100"
+                        data-tip="Lihat Track"
+                        onClick={(e) => { e.stopPropagation(); onTrackView(v); }}
+                      >
+                        <Route size={16} />
+                      </button>
+                    </td>
                   )}
-                </TableRow>
+                </tr>
               ))
             )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+          </tbody>
+        </table>
+      </div>
 
-      {data && (
-        <TablePagination
-          component="div"
-          count={data.total}
-          page={page}
-          onPageChange={(_, p) => setPage(p)}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={(e) => {
-            setRowsPerPage(parseInt(e.target.value, 10));
-            setPage(0);
-          }}
-          rowsPerPageOptions={[10, 15, 25, 50]}
-          labelRowsPerPage="Baris/halaman:"
-          sx={{
-            color: THEME_COLORS.textSecondary,
-            borderTop: `1px solid ${THEME_COLORS.border}`,
-            "& .MuiTablePagination-selectIcon": { color: THEME_COLORS.textSecondary },
-          }}
-        />
+      {data && total > 0 && (
+        <div className="flex flex-wrap items-center justify-end gap-3 border-t border-base-300 px-4 py-2">
+          <span className="text-xs text-base-content/60">Baris/halaman:</span>
+          <select
+            className="select select-xs w-16"
+            value={rowsPerPage}
+            onChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+          >
+            {[10, 15, 25, 50].map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
+          <span className="text-xs text-base-content/60">{rangeStart}–{rangeEnd} dari {formatNumber(total)}</span>
+          <div className="join">
+            <button
+              className="btn join-item btn-xs"
+              disabled={page === 0}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <button
+              className="btn join-item btn-xs"
+              disabled={rangeEnd >= total}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              <ChevronRight size={14} />
+            </button>
+          </div>
+        </div>
       )}
-    </Paper>
+    </div>
   );
 }

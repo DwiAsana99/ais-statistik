@@ -1,35 +1,13 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
-import {
-  Box, Typography, CircularProgress, Tabs, Tab, Alert, Button,
-  Paper, Table, TableBody, TableCell, TableHead, TableRow,
-} from "@mui/material";
-import { Grid } from "@mui/material";
-import { BarChart as BarChartIcon, TableChart, Flag, Straighten, Category } from "@mui/icons-material";
+import { BarChart3, Table2, Flag, Ruler, Shapes } from "lucide-react";
 import BarChartCard from "../components/charts/BarChartCard";
 import KpiCard from "../components/cards/KpiCard";
 import DataTable from "../components/tables/DataTable";
 import VesselTrackDialog from "../components/dialogs/VesselTrackDialog";
 import api from "../api/client";
 import type { DistributionResponse, VesselKpis, VesselListItem } from "../types";
-import { THEME_COLORS } from "../utils/constants";
 import { formatNumber } from "../utils/formatters";
-
-const cellSx = {
-  color: THEME_COLORS.text,
-  borderBottom: `1px solid ${THEME_COLORS.border}`,
-  fontSize: 13,
-  py: 1,
-};
-const headCellSx = {
-  ...cellSx,
-  fontWeight: 600,
-  color: THEME_COLORS.textSecondary,
-  fontSize: 11,
-  textTransform: "uppercase" as const,
-  letterSpacing: 0.5,
-  backgroundColor: THEME_COLORS.surface,
-};
 
 export default function VesselStatsPage() {
   const [searchParams] = useSearchParams();
@@ -70,64 +48,62 @@ export default function VesselStatsPage() {
     load();
   }, [load]);
 
+  const tabs = [
+    { icon: BarChart3, label: "Grafik" },
+    { icon: Table2, label: "Tabel Kapal" },
+  ];
+
   return (
-    <Box>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3 }}>
-        <Typography variant="h6" sx={{ color: THEME_COLORS.text, fontWeight: 600 }}>
-          Statistik Kapal
-        </Typography>
-        <Tabs
-          value={tab}
-          onChange={(_, v) => setTab(v)}
-          sx={{
-            minHeight: 36,
-            "& .MuiTab-root": {
-              minHeight: 36,
-              fontSize: 13,
-              color: THEME_COLORS.textSecondary,
-              textTransform: "none",
-              "&.Mui-selected": { color: THEME_COLORS.secondary },
-            },
-            "& .MuiTabs-indicator": { backgroundColor: THEME_COLORS.secondary },
-          }}
-        >
-          <Tab icon={<BarChartIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Grafik" />
-          <Tab icon={<TableChart sx={{ fontSize: 18 }} />} iconPosition="start" label="Tabel Kapal" />
-        </Tabs>
-      </Box>
+    <div>
+      <div className="mb-5 flex items-center justify-between">
+        <p className="text-lg font-semibold text-base-content">Statistik Kapal</p>
+        <div role="tablist" className="tabs tabs-lift tabs-sm">
+          {tabs.map((t, i) => (
+            <a
+              key={t.label}
+              role="tab"
+              className={`tab gap-1.5 ${tab === i ? "tab-active" : ""}`}
+              onClick={() => setTab(i)}
+            >
+              <t.icon size={16} /> {t.label}
+            </a>
+          ))}
+        </div>
+      </div>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2.5 }} action={<Button color="inherit" size="small" onClick={load}>Coba Lagi</Button>}>
-          {error}
-        </Alert>
+        <div className="alert alert-error mb-5">
+          <span>{error}</span>
+          <button className="btn btn-ghost btn-sm" onClick={load}>Coba Lagi</button>
+        </div>
       )}
 
       {tab === 0 && (
         loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", pt: 10 }}>
-            <CircularProgress sx={{ color: "#D4930A" }} />
-          </Box>
+          <div className="flex justify-center pt-16">
+            <span className="loading loading-spinner text-secondary" />
+          </div>
         ) : error ? null : (
-          <Grid container spacing={2.5}>
+          <div className="grid grid-cols-12 gap-5">
             {/* KPI cards */}
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <div className="col-span-12 sm:col-span-6 md:col-span-4">
               <KpiCard
                 title="Tipe Kapal Unik"
                 value={kpis?.unique_ship_types ?? 0}
-                icon={<Category />}
+                icon={<Shapes />}
                 color="#4e79a7"
               />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            </div>
+            <div className="col-span-12 sm:col-span-6 md:col-span-4">
               <KpiCard
                 title="Kapal Terbesar (LOA)"
                 value={kpis?.largest_vessel_loa ?? 0}
                 valueText={kpis?.largest_vessel_loa != null ? `${kpis.largest_vessel_loa.toFixed(0)} m` : "-"}
-                icon={<Straighten />}
+                icon={<Ruler />}
                 color="#D4930A"
               />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            </div>
+            <div className="col-span-12 sm:col-span-6 md:col-span-4">
               <KpiCard
                 title="Bendera Dominan"
                 value={0}
@@ -135,72 +111,56 @@ export default function VesselStatsPage() {
                 icon={<Flag />}
                 color="#59a14f"
               />
-            </Grid>
+            </div>
 
             {/* Charts */}
-            <Grid size={{ xs: 12, lg: 6 }}>
+            <div className="col-span-12 lg:col-span-6">
               {byType && <BarChartCard title={byType.title} data={byType.data} color="#4e79a7" />}
-            </Grid>
-            <Grid size={{ xs: 12, lg: 6 }}>
+            </div>
+            <div className="col-span-12 lg:col-span-6">
               {bySize && <BarChartCard title={bySize.title} data={bySize.data} color="#59a14f" />}
-            </Grid>
-            <Grid size={{ xs: 12 }}>
+            </div>
+            <div className="col-span-12">
               {byFlag && <BarChartCard title={byFlag.title} data={byFlag.data} color="#D4930A" height={350} />}
-            </Grid>
+            </div>
 
             {/* Flag table */}
             {byFlag && byFlag.data.length > 0 && (
-              <Grid size={{ xs: 12 }}>
-                <Paper
-                  sx={{
-                    backgroundColor: THEME_COLORS.surface,
-                    border: `1px solid ${THEME_COLORS.border}`,
-                    borderRadius: 2,
-                    overflow: "hidden",
-                  }}
-                  elevation={0}
-                >
-                  <Box sx={{ px: 2.5, py: 1.5, borderBottom: `1px solid ${THEME_COLORS.border}` }}>
-                    <Typography sx={{ fontSize: 14, fontWeight: 600, color: THEME_COLORS.text }}>
-                      Top Bendera Kapal
-                    </Typography>
-                  </Box>
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell sx={headCellSx}>#</TableCell>
-                        <TableCell sx={headCellSx}>Bendera</TableCell>
-                        <TableCell sx={{ ...headCellSx, textAlign: "right" }}>Jumlah</TableCell>
-                        <TableCell sx={{ ...headCellSx, textAlign: "right" }}>Share</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {byFlag.data.map((flag, i) => (
-                        <TableRow
-                          key={flag.label}
-                          hover
-                          sx={{ "&:hover": { backgroundColor: `${THEME_COLORS.surfaceLight} !important` } }}
-                        >
-                          <TableCell sx={{ ...cellSx, color: THEME_COLORS.textSecondary, width: 40 }}>
-                            {i + 1}
-                          </TableCell>
-                          <TableCell sx={{ ...cellSx, fontWeight: 500 }}>{flag.label}</TableCell>
-                          <TableCell sx={{ ...cellSx, textAlign: "right", fontFamily: "monospace" }}>
-                            {formatNumber(flag.value)}
-                          </TableCell>
-                          <TableCell sx={{ ...cellSx, textAlign: "right", color: THEME_COLORS.secondary, fontWeight: 600 }}>
-                            {byFlag.total > 0
-                              ? `${((flag.value / byFlag.total) * 100).toFixed(1)}%`
-                              : "-"}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </Paper>
-              </Grid>
+              <div className="col-span-12">
+                <div className="card overflow-hidden border border-base-300 bg-base-100">
+                  <div className="border-b border-base-300 px-5 py-3">
+                    <p className="text-sm font-semibold text-base-content">Top Bendera Kapal</p>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="table table-sm">
+                      <thead>
+                        <tr>
+                          <th className="bg-base-100 text-[11px] font-semibold tracking-wide text-base-content/60 uppercase">#</th>
+                          <th className="bg-base-100 text-[11px] font-semibold tracking-wide text-base-content/60 uppercase">Bendera</th>
+                          <th className="bg-base-100 text-right text-[11px] font-semibold tracking-wide text-base-content/60 uppercase">Jumlah</th>
+                          <th className="bg-base-100 text-right text-[11px] font-semibold tracking-wide text-base-content/60 uppercase">Share</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {byFlag.data.map((flag, i) => (
+                          <tr key={flag.label} className="hover:bg-base-200">
+                            <td className="w-10 text-base-content/60">{i + 1}</td>
+                            <td className="font-medium">{flag.label}</td>
+                            <td className="text-right font-mono">{formatNumber(flag.value)}</td>
+                            <td className="text-right font-semibold text-secondary">
+                              {byFlag.total > 0
+                                ? `${((flag.value / byFlag.total) * 100).toFixed(1)}%`
+                                : "-"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
             )}
-          </Grid>
+          </div>
         )
       )}
 
@@ -216,6 +176,6 @@ export default function VesselStatsPage() {
         open={trackVessel !== null}
         onClose={() => setTrackVessel(null)}
       />
-    </Box>
+    </div>
   );
 }

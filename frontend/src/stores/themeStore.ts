@@ -1,6 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { applyThemeColors, type ThemeMode } from "../utils/constants";
+import type { ThemeMode } from "../utils/constants";
+
+function applyDataTheme(mode: ThemeMode) {
+  document.documentElement.setAttribute("data-theme", mode === "dark" ? "maritime-dark" : "maritime");
+}
 
 interface ThemeState {
   mode: ThemeMode;
@@ -13,14 +17,14 @@ export const useThemeStore = create<ThemeState>()(
       mode: "dark",
       toggle: () => {
         const next: ThemeMode = get().mode === "dark" ? "light" : "dark";
-        applyThemeColors(next);
+        applyDataTheme(next);
         set({ mode: next });
       },
     }),
     {
       name: "ais-theme-mode",
       onRehydrateStorage: () => (state) => {
-        if (state) applyThemeColors(state.mode);
+        applyDataTheme(state?.mode ?? "dark");
       },
     }
   )

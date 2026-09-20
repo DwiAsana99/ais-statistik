@@ -1,7 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Box, Typography, CircularProgress, ToggleButtonGroup, ToggleButton, Alert, Button } from "@mui/material";
-import { Grid } from "@mui/material";
-import { DirectionsBoat, Speed, Schedule } from "@mui/icons-material";
+import { Ship, Gauge, Clock } from "lucide-react";
 import BarChartCard from "../components/charts/BarChartCard";
 import LineChartCard from "../components/charts/LineChartCard";
 import HeatmapChart from "../components/charts/HeatmapChart";
@@ -9,7 +7,6 @@ import KpiCard from "../components/cards/KpiCard";
 import type { HeatmapPoint } from "../components/charts/HeatmapChart";
 import api from "../api/client";
 import type { TrendResponse, DistributionResponse, StationStats, TrafficKpis, SogBin } from "../types";
-import { THEME_COLORS } from "../utils/constants";
 
 type Period = "7d" | "30d" | "90d";
 
@@ -108,143 +105,120 @@ export default function TrafficPage() {
   }));
 
   return (
-    <Box>
-      <Typography variant="h6" sx={{ color: THEME_COLORS.text, fontWeight: 600, mb: 3 }}>
-        Trafik & Tren
-      </Typography>
+    <div>
+      <p className="mb-3 text-lg font-semibold text-base-content">Trafik & Tren</p>
 
       {/* KPI cards — independent loading, fail silently */}
       {!kpisLoading && kpis && (
-        <Grid container spacing={2.5} sx={{ mb: 3 }}>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+        <div className="mb-5 grid grid-cols-12 gap-5">
+          <div className="col-span-12 sm:col-span-6 md:col-span-4">
             <KpiCard
               title="Kapal Aktif (7 Hari)"
               value={kpis.total_active_vessels_7d}
-              icon={<DirectionsBoat />}
+              icon={<Ship />}
               color="#4e79a7"
             />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          </div>
+          <div className="col-span-12 sm:col-span-6 md:col-span-4">
             <KpiCard
               title="Kecepatan Median"
               value={kpis.sog_median_knots}
               valueText={`${kpis.sog_median_knots.toFixed(1)} kn`}
-              icon={<Speed />}
+              icon={<Gauge />}
               color="#D4930A"
             />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          </div>
+          <div className="col-span-12 sm:col-span-6 md:col-span-4">
             <KpiCard
               title="Jam Puncak"
               value={kpis.peak_hour}
               valueText={`${String(kpis.peak_hour).padStart(2, "0")}:00`}
-              icon={<Schedule />}
+              icon={<Clock />}
               color="#76b7b2"
             />
-          </Grid>
-        </Grid>
+          </div>
+        </div>
       )}
 
-      <Grid container spacing={2.5}>
+      <div className="grid grid-cols-12 gap-5">
         {/* Trend line */}
-        <Grid size={{ xs: 12 }}>
-          <Box
-            sx={{
-              p: 2.5,
-              backgroundColor: THEME_COLORS.surface,
-              border: `1px solid ${THEME_COLORS.border}`,
-              borderRadius: 2,
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
-              <Typography variant="subtitle2" sx={{ color: THEME_COLORS.text, fontWeight: 600 }}>
+        <div className="col-span-12">
+          <div className="card border border-base-300 bg-base-100 p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <p className="text-sm font-semibold text-base-content">
                 {trend?.title ?? "Tren Kapal Aktif Harian"}
-              </Typography>
-              <ToggleButtonGroup
-                value={period}
-                exclusive
-                onChange={(_, val) => val && setPeriod(val as Period)}
-                size="small"
-                sx={{
-                  "& .MuiToggleButton-root": {
-                    color: THEME_COLORS.textSecondary,
-                    borderColor: THEME_COLORS.border,
-                    fontSize: 12,
-                    py: 0.4,
-                    px: 1.5,
-                    textTransform: "none",
-                    "&.Mui-selected": {
-                      color: THEME_COLORS.secondary,
-                      backgroundColor: `${THEME_COLORS.secondary}18`,
-                      borderColor: `${THEME_COLORS.secondary}60`,
-                    },
-                  },
-                }}
-              >
+              </p>
+              <div className="join">
                 {(Object.keys(PERIOD_LABELS) as Period[]).map((p) => (
-                  <ToggleButton key={p} value={p}>
+                  <button
+                    key={p}
+                    className={`btn join-item btn-xs ${period === p ? "btn-secondary" : "btn-outline"}`}
+                    onClick={() => setPeriod(p)}
+                  >
                     {PERIOD_LABELS[p]}
-                  </ToggleButton>
+                  </button>
                 ))}
-              </ToggleButtonGroup>
-            </Box>
+              </div>
+            </div>
 
             {trendLoading ? (
-              <Box sx={{ display: "flex", justifyContent: "center", height: 350, alignItems: "center" }}>
-                <CircularProgress size={28} sx={{ color: THEME_COLORS.secondary }} />
-              </Box>
+              <div className="flex h-[350px] items-center justify-center">
+                <span className="loading loading-spinner text-secondary" />
+              </div>
             ) : trendError ? (
-              <Alert severity="error" action={<Button color="inherit" size="small" onClick={loadTrend}>Coba Lagi</Button>}>
-                {trendError}
-              </Alert>
+              <div className="alert alert-error">
+                <span>{trendError}</span>
+                <button className="btn btn-ghost btn-sm" onClick={loadTrend}>Coba Lagi</button>
+              </div>
             ) : trend ? (
               <LineChartCard title="" data={trend.data} height={320} />
             ) : null}
-          </Box>
-        </Grid>
+          </div>
+        </div>
 
         {staticError ? (
-          <Grid size={{ xs: 12 }}>
-            <Alert severity="error" action={<Button color="inherit" size="small" onClick={loadStatic}>Coba Lagi</Button>}>
-              {staticError}
-            </Alert>
-          </Grid>
+          <div className="col-span-12">
+            <div className="alert alert-error">
+              <span>{staticError}</span>
+              <button className="btn btn-ghost btn-sm" onClick={loadStatic}>Coba Lagi</button>
+            </div>
+          </div>
         ) : (
           <>
             {/* Heatmap */}
-            <Grid size={{ xs: 12 }}>
+            <div className="col-span-12">
               {staticLoading ? (
-                <Box sx={{ display: "flex", justifyContent: "center", pt: 4 }}>
-                  <CircularProgress size={28} sx={{ color: THEME_COLORS.secondary }} />
-                </Box>
+                <div className="flex justify-center pt-8">
+                  <span className="loading loading-spinner text-secondary" />
+                </div>
               ) : (
                 <HeatmapChart title="Heatmap Trafik per Jam (30 hari terakhir)" data={heatmap} />
               )}
-            </Grid>
+            </div>
 
             {/* SOG distribution — only shown once worker has precomputed it */}
             {!kpisLoading && sogChartData.length > 0 && (
-              <Grid size={{ xs: 12, lg: 6 }}>
+              <div className="col-span-12 lg:col-span-6">
                 <BarChartCard
                   title="Distribusi Kecepatan (SOG) 7 Hari — knots"
                   data={sogChartData}
                   color="#f28e2b"
                 />
-              </Grid>
+              </div>
             )}
 
             {/* Hourly bar */}
-            <Grid size={{ xs: 12, lg: !kpisLoading && sogChartData.length > 0 ? 6 : 12 }}>
+            <div className={!kpisLoading && sogChartData.length > 0 ? "col-span-12 lg:col-span-6" : "col-span-12"}>
               {hourly && <BarChartCard title={hourly.title} data={hourly.data} color="#76b7b2" />}
-            </Grid>
+            </div>
 
             {/* Station bar */}
-            <Grid size={{ xs: 12 }}>
+            <div className="col-span-12">
               <BarChartCard title="Trafik per Stasiun" data={stationChartData} color="#e15759" />
-            </Grid>
+            </div>
           </>
         )}
-      </Grid>
-    </Box>
+      </div>
+    </div>
   );
 }
