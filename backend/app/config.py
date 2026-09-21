@@ -18,13 +18,16 @@ class Settings(BaseSettings):
     # Integrasi login UVMS (README-INTEGRASI-AIS-STATISTIK.md) — [PARAM] UVMS
     # belum jalan saat ini ditulis; uvms_internal_url WAJIB diisi via .env
     # sebelum guard ini bisa dites end-to-end. Fail-closed (503) selama itu.
+    # Nama env var disamakan dengan projek UVMS lain (ais-cri, ais-kpler, dst).
     uvms_internal_url: str = ""
     uvms_module_code: str = "statistik"
-    uvms_auth_timeout_s: float = 5.0
-    # Dev-only bypass — lihat app/auth.py. HARUS false/absen di production;
-    # tiap request yang lewat bypass ini dicatat sbg WARNING di log, sengaja
-    # berisik supaya tidak diam-diam kebawa ke deploy.
-    disable_uvms_guard: bool = False
+    uvms_session_cookie_name: str = "uvms_session"
+    uvms_authorize_timeout_sec: float = 5.0
+    # Guard nonaktif (bypass) selama false — default dev lokal selagi UVMS
+    # belum jalan. Lihat app/auth.py. HARUS true di production; tiap request
+    # yang lewat bypass ini dicatat sbg WARNING di log, sengaja berisik supaya
+    # tidak diam-diam kebawa ke deploy.
+    uvms_auth_enabled: bool = False
 
     # Loitering detection (Fase 12) — algoritma P1, lihat loitering.md.
     # Ambang batas di sini, BUKAN di-hardcode di service, biar konsisten dg prinsip "jangan hardcode".

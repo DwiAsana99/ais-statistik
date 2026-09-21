@@ -23,11 +23,15 @@ company_id — jadi tidak ada baris data yang perlu difilter per perusahaan di
 sini. Guard ini hanya menjaga syarat "modul aktif + user berhak", bukan
 row-level filtering (yang memang tidak berlaku untuk data ini).
 
-Dev bypass: DISABLE_UVMS_GUARD=true (env, default false) melewati verifikasi
+Dev bypass: UVMS_AUTH_ENABLED=false (env, default) melewati verifikasi
 sepenuhnya — dipakai supaya app masih bisa dites/didemokan lokal selagi UVMS
 belum berjalan. Tiap request yang lewat jalur ini dicatat sbg WARNING (bukan
 diam-diam) precisely supaya tidak luput kalau tanpa sengaja aktif di tempat
-yang seharusnya production. JANGAN set true di production.
+yang seharusnya production. HARUS true di production.
+
+Nama env var disamakan dengan projek UVMS lain (ais-cri, ais-kpler, dst):
+UVMS_AUTH_ENABLED, UVMS_INTERNAL_URL, UVMS_SESSION_COOKIE_NAME,
+UVMS_AUTHORIZE_TIMEOUT_SEC.
 """
 import logging
 
@@ -38,8 +42,6 @@ from pydantic import BaseModel
 from app.config import get_settings
 
 logger = logging.getLogger("uvms_auth")
-
-COOKIE_NAME = "uvms_session"
 
 
 class UvmsUser(BaseModel):
@@ -56,18 +58,18 @@ DEV_BYPASS_USER = UvmsUser(id=0, company_id=None, company_name=None, username="d
 async def require_statistik(request: Request) -> UvmsUser:
     settings = get_settings()
 
-    if settings.disable_uvms_guard:
+    if not settings.uvms_auth_enabled:
         # Sengaja WARNING (bukan debug/info) tiap request, bukan sekali saat startup —
         # supaya tidak mungkin luput dilihat di log kalau ini tanpa sengaja aktif di
         # lingkungan yang seharusnya production.
         logger.warning(
-            "UVMS_GUARD DIMATIKAN (DISABLE_UVMS_GUARD=true) — %s %s diloloskan tanpa "
+            "UVMS_GUARD DIMATIKAN (UVMS_AUTH_ENABLED=false) — %s %s diloloskan tanpa "
             "verifikasi sesi/otorisasi. HANYA untuk dev lokal, JANGAN aktif di production.",
             request.method, request.url.path,
         )
         return DEV_BYPASS_USER
 
-    session = request.cookies.get(COOKIE_NAME)
+    session = request.cookies.get(settings.uvms_session_cookie_name)
     if not session:
         raise HTTPException(status_code=401, detail="login required")
 
@@ -77,8 +79,8 @@ async def require_statistik(request: Request) -> UvmsUser:
 
     url = f"{settings.uvms_internal_url}/api/v1/auth/authorize/{settings.uvms_module_code}"
     try:
-        async with httpx.AsyncClient(timeout=settings.uvms_auth_timeout_s) as client:
-            response = await client.get(url, cookies={COOKIE_NAME: session})
+        async with httpx.AsyncClient(timeout=settings.uvms_authorize_timeout_sec) as client:
+            response = await client.get(url, cookies={settings.uvms_session_cookie_name: session})
     except httpx.RequestError:
         logger.warning("UVMS tidak terjangkau saat verifikasi otorisasi (%s)", url)
         raise HTTPException(status_code=503, detail="UVMS unavailable")
