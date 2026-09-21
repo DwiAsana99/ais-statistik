@@ -4,9 +4,11 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8001:8001"
+      - "127.0.0.1:8001:8001"
     env_file:
       - ./backend/.env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./backend:/app
       - ./data:/data
@@ -18,7 +20,7 @@ services:
       dockerfile: Dockerfile
     ports:
       # Diselaraskan dengan proxy Vite portal UVMS (/statistik -> :8082).
-      - "8082:80"
+      - "127.0.0.1:8082:80"
     depends_on:
       - backend
     restart: unless-stopped
