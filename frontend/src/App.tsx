@@ -39,7 +39,7 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <BrowserRouter>
+      <BrowserRouter basename="/statistik">
         <Suspense fallback={<PageFallback />}>
           <Routes>
             <Route element={<MainLayout />}>

@@ -1,6 +1,9 @@
 import axios from "axios";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "";
+// Default mengikuti deployment modul di belakang portal UVMS. Dengan request
+// seperti `/api/dashboard/overview`, Axios menghasilkan
+// `/statistik/api/dashboard/overview` yang kemudian di-rewrite oleh Nginx.
+const API_BASE_URL = import.meta.env.VITE_API_URL || "/statistik";
 
 // Integrasi login UVMS (README-INTEGRASI-AIS-STATISTIK.md) — cookie sesi UVMS
 // hanya terkirim lintas origin kalau withCredentials aktif. Cookie itu baru

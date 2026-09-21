@@ -3,12 +3,14 @@ from functools import lru_cache
 
 
 class Settings(BaseSettings):
-    database_url: str = "postgresql+asyncpg://uvms:P455word%40AIS@157.66.34.54:5432/dbais"
-    database_url_sync: str = "postgresql+psycopg2://uvms:P455word%40AIS@157.66.34.54:5432/dbais"
+    # Connection strings wajib dipasok lewat environment/.env. Jangan simpan
+    # kredensial database sebagai default di source code.
+    database_url: str
+    database_url_sync: str
 
-    redis_host: str = "157.66.34.54"
+    redis_host: str
     redis_port: int = 6379
-    redis_password: str = "Sbm2025"
+    redis_password: str
 
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
 
