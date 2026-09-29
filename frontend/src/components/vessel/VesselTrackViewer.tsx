@@ -144,8 +144,8 @@ export default function VesselTrackViewer({ vessel }: Props) {
         )}
         <MapContainer center={defaultCenter} zoom={6} style={{ width: "100%", height: "100%" }}>
           <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-            attribution="&copy; OSM &copy; CARTO"
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           />
           {track.length > 0 && (
             <>

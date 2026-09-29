@@ -235,8 +235,8 @@ export default function EncountersPage() {
                   <div className="h-80 overflow-hidden rounded-lg border border-base-300">
                     <MapContainer center={trackCenter} zoom={11} style={{ width: "100%", height: "100%" }}>
                       <TileLayer
-                        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                        attribution="&copy; OSM &copy; CARTO"
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                       />
                       <Polyline
                         positions={detail.track.map((t) => [t.lat_a, t.lon_a])}
